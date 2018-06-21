@@ -9,4 +9,4 @@
 
 - Draggable combo boxes.
 
-- Any tap after building a road will result in another piece of the road placed.
+- Create auto-save when the app is put to background, and load it on the next start.
