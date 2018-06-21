@@ -22,6 +22,14 @@ void Blitter_16bppBase::SetPixel(void *video, int x, int y, uint8 colour)
 	*((Colour16 *)video + x + y * _screen.pitch) = LookupColourInPalette(colour);
 }
 
+void Blitter_16bppBase::DrawLine(void *video, int x, int y, int x2, int y2, int screen_width, int screen_height, uint8 colour, int width, int dash)
+{
+	const Colour16 c = LookupColourInPalette(colour);
+	this->DrawLineGeneric(x, y, x2, y2, screen_width, screen_height, width, dash, [=](int x, int y) {
+		*((Colour16 *)video + x + y * _screen.pitch) = c;
+	});
+}
+
 void Blitter_16bppBase::SetLine(void *video, int x, int y, uint8 *colours, uint width)
 {
 	Colour16 *dst = (Colour16 *)video + x + y * _screen.pitch;
