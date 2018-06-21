@@ -2625,7 +2625,7 @@ static EventState HandleViewportScroll()
 {
 	bool scrollwheel_scrolling = _settings_client.gui.scrollwheel_scrolling == 1 && (_cursor.v_wheel != 0 || _cursor.h_wheel != 0);
 
-	if (_settings_client.gui.left_mouse_btn_scrolling) {
+	if (_settings_client.gui.scroll_mode == VSM_MAP_LMB) {
 		// Do not open vehicle/town info window while scrolling with left mouse button
 		static int oldDx = 0, oldDy = 0;
 		if (_left_button_down) {
@@ -3183,7 +3183,7 @@ static void MouseLoop(MouseClick click, int mousewheel)
 			case MC_LEFT:
 			case MC_DOUBLE_LEFT:
 				_left_button_click_count = (click == MC_DOUBLE_LEFT ? 2 : 1);
-				DispatchLeftClickEvent(w, x - w->left, y - w->top, click == MC_DOUBLE_LEFT ? 2 : 1);
+				DispatchLeftClickEvent(w, x - w->left, y - w->top, click == MC_DOUBLE_LEFT ? 2 : 1, true);
 				return;
 
 			default:
