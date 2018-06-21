@@ -64,12 +64,14 @@ static Window *_mouseover_last_w = NULL; ///< Window of the last #MOUSEOVER even
 static Window *_last_scroll_window = NULL; ///< Window of the last scroll event.
 
 /** List of windows opened at the screen sorted from the front. */
-Window *_z_front_window = NULL;
+WindowBase *_z_front_window = NULL;
 /** List of windows opened at the screen sorted from the back. */
-Window *_z_back_window  = NULL;
+WindowBase *_z_back_window  = NULL;
 
 /** If false, highlight is white, otherwise the by the widget defined colour. */
 bool _window_highlight_colour = false;
+
+uint64 _window_update_number = 1;
 
 /*
  * Window that currently has focus. - The main purpose is to generate
@@ -85,6 +87,7 @@ int _scrollbar_size;
 byte _scroller_click_timeout = 0;
 
 Window *_scrolling_viewport; ///< A viewport is being scrolled with the mouse.
+Rect _scrolling_viewport_bound; ///< A viewport is being scrolled with the mouse, the overlay currently covers this viewport rectangle.
 bool _mouse_hovering;      ///< The mouse is hovering over the same point.
 static bool _left_button_dragged;
 
@@ -787,18 +790,6 @@ static void DispatchLeftClickEvent(Window *w, int x, int y, int click_count, boo
 }
 
 static int _left_button_click_count = 0;
-/**
- * Dispatch left mouse-button (possibly double) press in window.
- * @param w Window to dispatch event in
- * @param x X coordinate of the click
- * @param y Y coordinate of the click
- * @param click_count Number of fast consecutive clicks at same position
- */
-static void DispatchLeftButtonDownEvent(Window *w, int x, int y, int click_count)
-{
-	_left_button_click_count = click_count;
-	DispatchLeftClickEvent(w, x, y, click_count, true);
-}
 
 /**
  * Dispatch left mouse-button (possibly double) release in window.
@@ -1419,7 +1410,7 @@ static void AddWindowToZOrdering(Window *w)
 		w->z_front = w->z_back = NULL;
 	} else {
 		/* Search down the z-ordering for its location. */
-		Window *v = _z_front_window;
+		WindowBase *v = _z_front_window;
 		uint last_z_priority = UINT_MAX;
 		while (v != NULL && (v->window_class == WC_INVALID || GetWindowZPriority(v->window_class) > GetWindowZPriority(w->window_class))) {
 			if (v->window_class != WC_INVALID) {
@@ -1458,7 +1449,7 @@ static void AddWindowToZOrdering(Window *w)
  * Removes a window from the z-ordering.
  * @param w Window to remove
  */
-static void RemoveWindowFromZOrdering(Window *w)
+static void RemoveWindowFromZOrdering(WindowBase *w)
 {
 	if (w->z_front == NULL) {
 		assert(_z_front_window == w);
@@ -2006,6 +1997,7 @@ void InitWindowSystem()
 	_mouseover_last_w = NULL;
 	_last_scroll_window = NULL;
 	_scrolling_viewport = NULL;
+	_scrolling_viewport_bound = { 0, 0, 0, 0 };
 	_mouse_hovering = false;
 
 	NWidgetLeaf::InvalidateDimensionCache(); // Reset cached sizes of several widgets.
@@ -2021,11 +2013,11 @@ void UnInitWindowSystem()
 {
 	UnshowCriticalError();
 
-	Window *w;
-	FOR_ALL_WINDOWS_FROM_FRONT(w) delete w;
+	Window *v;
+	FOR_ALL_WINDOWS_FROM_FRONT(v) delete v;
 
-	for (w = _z_front_window; w != NULL; /* nothing */) {
-		Window *to_del = w;
+	for (WindowBase *w = _z_front_window; w != NULL; /* nothing */) {
+		WindowBase *to_del = w;
 		w = w->z_back;
 		free(to_del);
 	}
@@ -2655,12 +2647,11 @@ static EventState HandleViewportScroll()
 	 * outside of the window and should not left-mouse scroll anymore. */
 	if (_last_scroll_window == NULL) _last_scroll_window = FindWindowFromPt(_cursor.pos.x, _cursor.pos.y);
 
-
-	if (_last_scroll_window == NULL || !(_right_button_down || scrollwheel_scrolling ||
-			(_left_button_down && (_move_pressed || _settings_client.gui.left_mouse_btn_scrolling)))) {
+	if (_last_scroll_window == NULL || !((_settings_client.gui.scroll_mode != VSM_MAP_LMB && _right_button_down) || scrollwheel_scrolling || (_settings_client.gui.scroll_mode == VSM_MAP_LMB && _left_button_down))) {
 		_cursor.fix_at = false;
 		_scrolling_viewport = NULL;
 		_last_scroll_window = NULL;
+		UpdateActiveScrollingViewport(nullptr);
 		return ES_NOT_HANDLED;
 	}
 
@@ -2672,20 +2663,20 @@ static EventState HandleViewportScroll()
 	}
 
 	Point delta;
-	if (_settings_client.gui.reverse_scroll || (_settings_client.gui.left_mouse_btn_scrolling && _left_button_down)) {
-		delta.x = -_cursor.delta.x;
-		delta.y = -_cursor.delta.y;
-	} else {
-		delta.x = _cursor.delta.x;
-		delta.y = _cursor.delta.y;
-	}
-
 	if (scrollwheel_scrolling) {
 		/* We are using scrollwheels for scrolling */
 		delta.x = _cursor.h_wheel;
 		delta.y = _cursor.v_wheel;
 		_cursor.v_wheel = 0;
 		_cursor.h_wheel = 0;
+	} else {
+		if (_settings_client.gui.scroll_mode != VSM_VIEWPORT_RMB_FIXED) {
+			delta.x = -_cursor.delta.x;
+			delta.y = -_cursor.delta.y;
+		} else {
+			delta.x = _cursor.delta.x;
+			delta.y = _cursor.delta.y;
+		}
 	}
 
 	/* Create a scroll-event and send it to the window */
@@ -3123,15 +3114,20 @@ static void MouseLoop(MouseClick click, int mousewheel)
 	if (vp != NULL && (_game_mode == GM_MENU || _game_mode == GM_BOOTSTRAP || HasModalProgress())) return;
 
 	if (mousewheel != 0) {
-		/* Send mousewheel event to window */
-		w->OnMouseWheel(mousewheel);
+		/* Send mousewheel event to window, unless we're scrolling a viewport or the map */
+		if (!scrollwheel_scrolling || (vp == NULL && w->window_class != WC_SMALLMAP)) w->OnMouseWheel(mousewheel);
 
 		/* Dispatch a MouseWheelEvent for widgets if it is not a viewport */
 		if (vp == NULL) DispatchMouseWheelEvent(w, w->nested_root->GetWidgetFromPos(x - w->left, y - w->top), mousewheel);
 	}
 
 	if (vp != NULL) {
-		if (scrollwheel_scrolling) click = MC_RIGHT; // we are using the scrollwheel in a viewport, so we emulate right mouse button
+		if (scrollwheel_scrolling && !(w->flags & WF_DISABLE_VP_SCROLL)) {
+			_scrolling_viewport = w;
+			_cursor.fix_at = true;
+			return;
+		}
+
 		switch (click) {
 			case MC_DOUBLE_LEFT:
 				mouse_down_on_viewport = true;
@@ -3141,7 +3137,7 @@ static void MouseLoop(MouseClick click, int mousewheel)
 				mouse_down_on_viewport = true;
 				if (HandleViewportClicked(vp, x, y, click == MC_DOUBLE_LEFT)) return;
 				if (!(w->flags & WF_DISABLE_VP_SCROLL) &&
-						(_settings_client.gui.left_mouse_btn_scrolling || _move_pressed)) {
+						_settings_client.gui.scroll_mode == VSM_MAP_LMB) {
 					_scrolling_viewport = w;
 					_cursor.fix_at = false;
 					return;
@@ -3163,13 +3159,11 @@ static void MouseLoop(MouseClick click, int mousewheel)
 				break;
 
 			case MC_RIGHT:
-				if (!(w->flags & WF_DISABLE_VP_SCROLL)) {
+				if (!(w->flags & WF_DISABLE_VP_SCROLL) &&
+						_settings_client.gui.scroll_mode != VSM_MAP_LMB) {
 					_scrolling_viewport = w;
-					_cursor.fix_at = true;
-
-					/* clear 2D scrolling caches before we start a 2D scroll */
-					_cursor.h_wheel = 0;
-					_cursor.v_wheel = 0;
+					_cursor.fix_at = (_settings_client.gui.scroll_mode == VSM_VIEWPORT_RMB_FIXED ||
+							_settings_client.gui.scroll_mode == VSM_MAP_RMB_FIXED);
 					return;
 				}
 				break;
@@ -3188,8 +3182,9 @@ static void MouseLoop(MouseClick click, int mousewheel)
 
 			case MC_LEFT:
 			case MC_DOUBLE_LEFT:
-				DispatchLeftButtonDownEvent(w, x - w->left, y - w->top, click == MC_DOUBLE_LEFT ? 2 : 1);
-				break;
+				_left_button_click_count = (click == MC_DOUBLE_LEFT ? 2 : 1);
+				DispatchLeftClickEvent(w, x - w->left, y - w->top, click == MC_DOUBLE_LEFT ? 2 : 1);
+				return;
 
 			default:
 				if (!scrollwheel_scrolling || w == NULL || w->window_class != WC_SMALLMAP) break;
@@ -3197,11 +3192,19 @@ static void MouseLoop(MouseClick click, int mousewheel)
 				 * Simulate a right button click so we can get started. */
 				FALLTHROUGH;
 
-			case MC_RIGHT: DispatchRightClickEvent(w, x - w->left, y - w->top); break;
+			case MC_RIGHT:
+				DispatchRightClickEvent(w, x - w->left, y - w->top);
+				return;
 
-			case MC_HOVER: DispatchHoverEvent(w, x - w->left, y - w->top); break;
+			case MC_HOVER:
+				DispatchHoverEvent(w, x - w->left, y - w->top);
+				break;
 		}
 	}
+
+	/* We're not doing anything with 2D scrolling, so reset the value.  */
+	_cursor.h_wheel = 0;
+	_cursor.v_wheel = 0;
 }
 
 /**
@@ -3335,8 +3338,8 @@ void InputLoop()
 	HandleKeyScrolling();
 
 	/* Do the actual free of the deleted windows. */
-	for (Window *v = _z_front_window; v != NULL; /* nothing */) {
-		Window *w = v;
+	for (WindowBase *v = _z_front_window; v != NULL; /* nothing */) {
+		WindowBase *w = v;
 		v = v->z_back;
 
 		if (w->window_class != WC_INVALID) continue;
@@ -3367,6 +3370,8 @@ void InputLoop()
 void UpdateWindows()
 {
 	Window *w;
+
+	_window_update_number++;
 
 	static int highlight_timer = 1;
 	if (--highlight_timer == 0) {
@@ -3410,6 +3415,8 @@ void UpdateWindows()
 	NetworkDrawChatMessage();
 	/* Redraw mouse cursor in case it was hidden */
 	DrawMouseCursor();
+
+	_window_update_number++;
 }
 
 /**

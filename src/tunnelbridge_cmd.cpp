@@ -346,7 +346,6 @@ CommandCost CmdBuildBridge(TileIndex end_tile, DoCommandFlag flags, uint32 p1, u
 	int z_end;
 	Slope tileh_start = GetTileSlope(tile_start, &z_start);
 	Slope tileh_end = GetTileSlope(tile_end, &z_end);
-	bool pbs_reservation = false;
 
 	CommandCost terraform_cost_north = CheckBridgeSlopeNorth(direction, &tileh_start, &z_start);
 	CommandCost terraform_cost_south = CheckBridgeSlopeSouth(direction, &tileh_end,   &z_end);
@@ -358,6 +357,7 @@ CommandCost CmdBuildBridge(TileIndex end_tile, DoCommandFlag flags, uint32 p1, u
 	CommandCost cost(EXPENSES_CONSTRUCTION);
 	Owner owner;
 	bool is_new_owner;
+	bool is_upgrade = false;
 	if (IsBridgeTile(tile_start) && IsBridgeTile(tile_end) &&
 			GetOtherBridgeEnd(tile_start) == tile_end &&
 			GetTunnelBridgeTransportType(tile_start) == transport_type) {
@@ -399,19 +399,7 @@ CommandCost CmdBuildBridge(TileIndex end_tile, DoCommandFlag flags, uint32 p1, u
 		is_new_owner = (owner == OWNER_NONE);
 		if (is_new_owner) owner = company;
 
-		switch (transport_type) {
-			case TRANSPORT_RAIL:
-				/* Keep the reservation, the path stays valid. */
-				pbs_reservation = HasTunnelBridgeReservation(tile_start);
-				break;
-
-			case TRANSPORT_ROAD:
-				/* Do not remove road types when upgrading a bridge */
-				roadtypes |= GetRoadTypes(tile_start);
-				break;
-
-			default: break;
-		}
+		is_upgrade = true;
 	} else {
 		/* Build a new bridge. */
 
@@ -525,31 +513,32 @@ CommandCost CmdBuildBridge(TileIndex end_tile, DoCommandFlag flags, uint32 p1, u
 			case TRANSPORT_RAIL:
 				/* Add to company infrastructure count if required. */
 				if (is_new_owner && c != NULL) c->infrastructure.rail[railtype] += (bridge_len + 2) * TUNNELBRIDGE_TRACKBIT_FACTOR;
-				MakeRailBridgeRamp(tile_start, owner, bridge_type, dir,                 railtype);
-				MakeRailBridgeRamp(tile_end,   owner, bridge_type, ReverseDiagDir(dir), railtype);
-				SetTunnelBridgeReservation(tile_start, pbs_reservation);
-				SetTunnelBridgeReservation(tile_end,   pbs_reservation);
+				MakeRailBridgeRamp(tile_start, owner, bridge_type, dir,                 railtype, is_upgrade);
+				MakeRailBridgeRamp(tile_end,   owner, bridge_type, ReverseDiagDir(dir), railtype, is_upgrade);
 				break;
 
 			case TRANSPORT_ROAD: {
-				RoadTypes prev_roadtypes = IsBridgeTile(tile_start) ? GetRoadTypes(tile_start) : ROADTYPES_NONE;
-				if (is_new_owner) {
-					/* Also give unowned present roadtypes to new owner */
-					if (HasBit(prev_roadtypes, ROADTYPE_ROAD) && GetRoadOwner(tile_start, ROADTYPE_ROAD) == OWNER_NONE) ClrBit(prev_roadtypes, ROADTYPE_ROAD);
-					if (HasBit(prev_roadtypes, ROADTYPE_TRAM) && GetRoadOwner(tile_start, ROADTYPE_TRAM) == OWNER_NONE) ClrBit(prev_roadtypes, ROADTYPE_TRAM);
-				}
-				if (c != NULL) {
-					/* Add all new road types to the company infrastructure counter. */
-					RoadType new_rt;
-					FOR_EACH_SET_ROADTYPE(new_rt, roadtypes ^ prev_roadtypes) {
-						/* A full diagonal road tile has two road bits. */
-						c->infrastructure.road[new_rt] += (bridge_len + 2) * 2 * TUNNELBRIDGE_TRACKBIT_FACTOR;
+				if (is_upgrade) SubtractRoadTunnelBridgeInfrastructure(tile_start, tile_end);
+				auto make_bridge_ramp = [company, owner, is_upgrade, is_new_owner, bridge_type, roadtypes](TileIndex t, DiagDirection d) {
+					RoadTypes new_roadtypes = roadtypes | GetRoadTypes(t);
+					RoadTypes prev_roadtypes = IsBridgeTile(t) ? GetRoadTypes(t) : ROADTYPES_NONE;
+					if (is_new_owner) {
+						/* Also give unowned present roadtypes to new owner */
+						if (HasBit(prev_roadtypes, ROADTYPE_ROAD) && GetRoadOwner(t, ROADTYPE_ROAD) == OWNER_NONE) ClrBit(prev_roadtypes, ROADTYPE_ROAD);
+						if (HasBit(prev_roadtypes, ROADTYPE_TRAM) && GetRoadOwner(t, ROADTYPE_TRAM) == OWNER_NONE) ClrBit(prev_roadtypes, ROADTYPE_TRAM);
 					}
-				}
-				Owner owner_road = HasBit(prev_roadtypes, ROADTYPE_ROAD) ? GetRoadOwner(tile_start, ROADTYPE_ROAD) : company;
-				Owner owner_tram = HasBit(prev_roadtypes, ROADTYPE_TRAM) ? GetRoadOwner(tile_start, ROADTYPE_TRAM) : company;
-				MakeRoadBridgeRamp(tile_start, owner, owner_road, owner_tram, bridge_type, dir,                 roadtypes);
-				MakeRoadBridgeRamp(tile_end,   owner, owner_road, owner_tram, bridge_type, ReverseDiagDir(dir), roadtypes);
+
+					Owner owner_road = HasBit(prev_roadtypes, ROADTYPE_ROAD) ? GetRoadOwner(t, ROADTYPE_ROAD) : company;
+					Owner owner_tram = HasBit(prev_roadtypes, ROADTYPE_TRAM) ? GetRoadOwner(t, ROADTYPE_TRAM) : company;
+					MakeRoadBridgeRamp(t, owner, owner_road, owner_tram, bridge_type, d, new_roadtypes, is_upgrade);
+					if (is_upgrade) {
+						if (HasBit(roadtypes, ROADTYPE_ROAD)) SetCustomBridgeHeadRoadBits(t, ROADTYPE_ROAD, GetCustomBridgeHeadRoadBits(t, ROADTYPE_ROAD) | DiagDirToRoadBits(d));
+						if (HasBit(roadtypes, ROADTYPE_TRAM)) SetCustomBridgeHeadRoadBits(t, ROADTYPE_TRAM, GetCustomBridgeHeadRoadBits(t, ROADTYPE_TRAM) | DiagDirToRoadBits(d));
+					}
+				};
+				make_bridge_ramp(tile_start, dir);
+				make_bridge_ramp(tile_end, ReverseDiagDir(dir));
+				AddRoadTunnelBridgeInfrastructure(tile_start, tile_end);
 				break;
 			}
 
@@ -2137,6 +2126,8 @@ static const byte TUNNEL_SOUND_FRAME = 1;
  */
 extern const byte _tunnel_visibility_frame[DIAGDIR_END] = {12, 8, 8, 12};
 
+extern const byte _tunnel_turnaround_pre_visibility_frame[DIAGDIR_END] = {31, 27, 27, 31};
+
 static VehicleEnterTileStatus VehicleEnter_TunnelBridge(Vehicle *v, TileIndex tile, int x, int y)
 {
 	int z = GetSlopePixelZ(x, y) - v->z_pos;
@@ -2187,7 +2178,8 @@ static VehicleEnterTileStatus VehicleEnter_TunnelBridge(Vehicle *v, TileIndex ti
 			if (rv->state != RVSB_WORMHOLE && dir == vdir) {
 				if (frame == _tunnel_visibility_frame[dir]) {
 					/* Frame should be equal to the next frame number in the RV's movement */
-					assert(frame == rv->frame + 1);
+					assert_msg(frame == rv->frame + 1 || rv->frame == _tunnel_turnaround_pre_visibility_frame[dir],
+							"frame: %u, rv->frame: %u, dir: %u, _tunnel_turnaround_pre_visibility_frame[dir]: %u", frame, rv->frame, dir, _tunnel_turnaround_pre_visibility_frame[dir]);
 					rv->tile = tile;
 					rv->cur_image_valid_dir = INVALID_DIR;
 					rv->state = RVSB_WORMHOLE;

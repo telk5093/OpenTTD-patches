@@ -311,17 +311,19 @@ bool BaseVehicleListWindow::ShouldShowActionDropdownList() const
  * @return Itemlist for dropdown
  */
 DropDownList *BaseVehicleListWindow::BuildActionDropdownList(bool show_autoreplace, bool show_group, bool show_template_replace,
-		StringID change_order_str, bool show_create_group)
+		StringID change_order_str, bool show_create_group, bool consider_top_level)
 {
 	DropDownList *list = new DropDownList();
 	bool disable = this->vehicles.Length() == 0;
+	bool mass_action_disable = disable || (_settings_client.gui.disable_top_veh_list_mass_actions && consider_top_level);
 
 	if (show_autoreplace) *list->Append() = new DropDownListStringItem(STR_VEHICLE_LIST_REPLACE_VEHICLES, ADI_REPLACE, disable);
 	if (show_autoreplace && show_template_replace) {
 		*list->Append() = new DropDownListStringItem(STR_TMPL_TEMPLATE_REPLACEMENT, ADI_TEMPLATE_REPLACE, disable);
 	}
-	*list->Append() = new DropDownListStringItem(STR_VEHICLE_LIST_SEND_FOR_SERVICING, ADI_SERVICE, disable);
-	*list->Append() = new DropDownListStringItem(this->vehicle_depot_name[this->vli.vtype], ADI_DEPOT, disable);
+	*list->Append() = new DropDownListStringItem(STR_VEHICLE_LIST_SEND_FOR_SERVICING, ADI_SERVICE, mass_action_disable);
+	*list->Append() = new DropDownListStringItem(this->vehicle_depot_name[this->vli.vtype], ADI_DEPOT, mass_action_disable);
+	*list->Append() = new DropDownListStringItem(STR_VEHICLE_LIST_CANCEL_DEPOT_SERVICE, ADI_CANCEL_DEPOT, mass_action_disable);
 
 	if (show_group) {
 		*list->Append() = new DropDownListStringItem(STR_GROUP_ADD_SHARED_VEHICLE, ADI_ADD_SHARED, disable);
@@ -602,7 +604,7 @@ struct RefitWindow : public Window {
 		do {
 			if (v->type == VEH_TRAIN && !vehicles_to_refit.Contains(v->index)) continue;
 			const Engine *e = v->GetEngine();
-			uint32 cmask = e->info.refit_mask;
+			CargoTypes cmask = e->info.refit_mask;
 			byte callback_mask = e->info.callback_mask;
 
 			/* Skip this engine if it does not carry anything */
@@ -1040,8 +1042,8 @@ struct RefitWindow : public Window {
 				Vehicle *v = Vehicle::Get(this->window_number);
 				this->selected_vehicle = v->index;
 				this->num_vehicles = UINT8_MAX;
+				FALLTHROUGH;
 			}
-			FALLTHROUGH;
 
 			case 2: { // The vehicle selection has changed; rebuild the entire list.
 				if (!gui_scope) break;
@@ -1066,8 +1068,8 @@ struct RefitWindow : public Window {
 					this->information_width = max_width;
 					this->ReInit();
 				}
+				FALLTHROUGH;
 			}
-			FALLTHROUGH;
 
 			case 1: // A new cargo has been selected.
 				if (!gui_scope) break;
@@ -1128,8 +1130,8 @@ struct RefitWindow : public Window {
 					if (_ctrl_pressed) this->num_vehicles = UINT8_MAX;
 					break;
 				}
+				FALLTHROUGH;
 			}
-			FALLTHROUGH;
 
 			default:
 				/* Clear the selection. */
@@ -1163,8 +1165,8 @@ struct RefitWindow : public Window {
 				this->InvalidateData(1);
 
 				if (click_count == 1) break;
+				FALLTHROUGH;
 			}
-			FALLTHROUGH;
 
 			case WID_VR_REFIT: // refit button
 				if (this->cargo != NULL) {
@@ -1269,9 +1271,9 @@ void ShowVehicleRefitWindow(const Vehicle *v, VehicleOrderID order, Window *pare
 uint ShowRefitOptionsList(int left, int right, int y, EngineID engine)
 {
 	/* List of cargo types of this engine */
-	uint32 cmask = GetUnionOfArticulatedRefitMasks(engine, false);
+	CargoTypes cmask = GetUnionOfArticulatedRefitMasks(engine, false);
 	/* List of cargo types available in this climate */
-	uint32 lmask = _cargo_mask;
+	CargoTypes lmask = _cargo_mask;
 
 	/* Draw nothing if the engine is not refittable */
 	if (HasAtMostOneBit(cmask)) return y;
@@ -1870,7 +1872,7 @@ public:
 		if (this->owner == _local_company) {
 			this->SetWidgetDisabledState(WID_VL_AVAILABLE_VEHICLES, this->vli.type != VL_STANDARD);
 			this->SetWidgetDisabledState(WID_VL_MANAGE_VEHICLES_DROPDOWN, !this->ShouldShowActionDropdownList());
-			this->SetWidgetsDisabledState(this->vehicles.Length() == 0,
+			this->SetWidgetsDisabledState(this->vehicles.Length() == 0 || (this->vli.type == VL_STANDARD && _settings_client.gui.disable_top_veh_list_mass_actions),
 				WID_VL_STOP_ALL,
 				WID_VL_START_ALL,
 				WIDGET_LIST_END);
@@ -1915,8 +1917,9 @@ public:
 				break;
 
 			case WID_VL_MANAGE_VEHICLES_DROPDOWN: {
-				DropDownList *list = this->BuildActionDropdownList(VehicleListIdentifier::UnPack(this->window_number).type == VL_STANDARD, false,
-						this->vli.vtype == VEH_TRAIN, this->GetChangeOrderStringID(), true);
+				VehicleListIdentifier vli = VehicleListIdentifier::UnPack(this->window_number);
+				DropDownList *list = this->BuildActionDropdownList(vli.type == VL_STANDARD, false,
+						this->vli.vtype == VEH_TRAIN, this->GetChangeOrderStringID(), true, vli.type == VL_STANDARD);
 				ShowDropDownList(this, list, -1, WID_VL_MANAGE_VEHICLES_DROPDOWN);
 				break;
 			}
@@ -1946,7 +1949,7 @@ public:
 						break;
 					case ADI_TEMPLATE_REPLACE:
 						if (vli.vtype == VEH_TRAIN) {
-							ShowTemplateReplaceWindow(this->unitnumber_digits, this->resize.step_height);
+							ShowTemplateReplaceWindow(this->unitnumber_digits);
 						}
 						break;
 					case ADI_SERVICE: // Send for servicing
@@ -2291,13 +2294,13 @@ struct VehicleDetailsWindow : Window {
 		uint desired_height;
 		if (v->HasArticulatedPart()) {
 			/* An articulated RV has its text drawn under the sprite instead of after it, hence 15 pixels extra. */
-			desired_height = WD_FRAMERECT_TOP + ScaleGUITrad(15) + 3 * FONT_HEIGHT_NORMAL + 2 + WD_FRAMERECT_BOTTOM;
+			desired_height = WD_FRAMERECT_TOP + ScaleGUITrad(15) + 4 * FONT_HEIGHT_NORMAL + 3 + WD_FRAMERECT_BOTTOM;
 			/* Add space for the cargo amount for each part. */
 			for (const Vehicle *u = v; u != NULL; u = u->Next()) {
 				if (u->cargo_cap != 0) desired_height += FONT_HEIGHT_NORMAL + 1;
 			}
 		} else {
-			desired_height = WD_FRAMERECT_TOP + 4 * FONT_HEIGHT_NORMAL + 3 + WD_FRAMERECT_BOTTOM;
+			desired_height = WD_FRAMERECT_TOP + 5 * FONT_HEIGHT_NORMAL + 4 + WD_FRAMERECT_BOTTOM;
 		}
 		return desired_height;
 	}
@@ -2884,7 +2887,7 @@ static const uint32 _vehicle_command_translation_table[][4] = {
 		CMD_REVERSE_TRAIN_DIRECTION | CMD_MSG(STR_ERROR_CAN_T_REVERSE_DIRECTION_TRAIN),
 		CMD_TURN_ROADVEH            | CMD_MSG(STR_ERROR_CAN_T_MAKE_ROAD_VEHICLE_TURN),
 		0xffffffff, // invalid for ships
-		0xffffffff  // invalid for aircrafts
+		0xffffffff  // invalid for aircraft
 	},
 };
 
@@ -3214,6 +3217,12 @@ public:
 					str = STR_VEHICLE_STATUS_LOADING_UNLOADING;
 					break;
 
+				case OT_LOADING_ADVANCE:
+					str = STR_VEHICLE_STATUS_LOADING_UNLOADING_ADVANCE;
+					SetDParam(0, STR_VEHICLE_STATUS_LOADING_UNLOADING);
+					SetDParam(1, v->GetDisplaySpeed());
+					break;
+
 				case OT_GOTO_WAYPOINT: {
 					assert(v->type == VEH_TRAIN || v->type == VEH_SHIP);
 					SetDParam(0, v->current_order.GetDestination());
@@ -3488,8 +3497,7 @@ int GetSingleVehicleWidth(const Vehicle *v, EngineImageType image_type)
 			bool rtl = _current_text_dir == TD_RTL;
 			VehicleSpriteSeq seq;
 			v->GetImage(rtl ? DIR_E : DIR_W, image_type, &seq);
-			Rect rec;
-			seq.GetBounds(&rec);
+			Rect16 rec = seq.GetBounds();
 			return UnScaleGUI(rec.right - rec.left + 1);
 	}
 }

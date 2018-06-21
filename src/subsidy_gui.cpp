@@ -1,4 +1,4 @@
-/* $Id$ */
+
 
 /*
  * This file is part of OpenTTD.
@@ -147,9 +147,6 @@ struct SubsidyListWindow : Window {
 	{
 		if (widget != WID_SUL_PANEL) return;
 
-		YearMonthDay ymd;
-		ConvertDateToYMD(_date, &ymd);
-
 		int right = r.right - WD_FRAMERECT_RIGHT;
 		int y = r.top + WD_FRAMERECT_TOP;
 		int x = r.left + WD_FRAMERECT_LEFT;
@@ -169,7 +166,7 @@ struct SubsidyListWindow : Window {
 				if (IsInsideMM(pos, 0, cap)) {
 					/* Displays the two offered towns */
 					SetupSubsidyDecodeParam(s, true);
-					SetDParam(7, _date - ymd.day + s->remaining * 32);
+					SetDParam(7, _date - _cur_date_ymd.day + s->remaining * 32);
 					DrawString(x, right, y + pos * GetMinSizing(NWST_STEP), STR_SUBSIDIES_OFFERED_FROM_TO);
 				}
 				pos++;
@@ -193,7 +190,7 @@ struct SubsidyListWindow : Window {
 				if (IsInsideMM(pos, 0, cap)) {
 					SetupSubsidyDecodeParam(s, true);
 					SetDParam(7, s->awarded);
-					SetDParam(8, _date - ymd.day + s->remaining * 32);
+					SetDParam(8, _date - _cur_date_ymd.day + s->remaining * 32);
 
 					/* Displays the two connected stations */
 					DrawString(x, right, y + pos * GetMinSizing(NWST_STEP), STR_SUBSIDIES_SUBSIDISED_FROM_TO);

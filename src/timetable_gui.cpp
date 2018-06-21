@@ -215,8 +215,15 @@ struct TimetableWindow : Window {
 	{
 		assert(HasBit(v->vehicle_flags, VF_TIMETABLE_STARTED));
 
-		bool travelling = (!(v->current_order.IsType(OT_LOADING) || v->current_order.IsType(OT_WAITING)) || v->current_order.GetNonStopType() == ONSF_STOP_EVERYWHERE);
+		bool travelling = (!(v->current_order.IsAnyLoadingType() || v->current_order.IsType(OT_WAITING)) || v->current_order.GetNonStopType() == ONSF_STOP_EVERYWHERE);
 		Ticks start_time = -v->current_order_time;
+		if (v->cur_timetable_order_index != INVALID_VEH_ORDER_ID && v->cur_timetable_order_index != v->cur_real_order_index) {
+			/* vehicle is taking a conditional order branch, adjust start time to compensate */
+			const Order *real_current_order = v->GetOrder(v->cur_real_order_index);
+			const Order *real_timetable_order = v->GetOrder(v->cur_timetable_order_index);
+			assert(real_timetable_order->IsType(OT_CONDITIONAL));
+			start_time += (real_timetable_order->GetWaitTime() - real_current_order->GetTravelTime());
+		}
 
 		FillTimetableArrivalDepartureTable(v, v->cur_real_order_index % v->GetNumOrders(), travelling, table, start_time);
 
@@ -565,14 +572,16 @@ struct TimetableWindow : Window {
 					bool have_missing_wait = false;
 					bool have_missing_travel = false;
 					bool have_bad_full_load = false;
+					bool have_non_timetabled_conditional_branch = false;
 
 					const bool assume_timetabled = HasBit(v->vehicle_flags, VF_AUTOFILL_TIMETABLE) || HasBit(v->vehicle_flags, VF_AUTOMATE_TIMETABLE);
 					for (int n = 0; n < v->GetNumOrders(); n++) {
 						const Order *order = v->GetOrder(n);
 						if (order->IsType(OT_CONDITIONAL)) {
 							have_conditional = true;
+							if (!order->IsWaitTimetabled()) have_non_timetabled_conditional_branch = true;
 						} else {
-							if (order->GetWaitTime() == 0 && order->IsType(OT_GOTO_STATION)) {
+							if (order->GetWaitTime() == 0 && order->IsType(OT_GOTO_STATION) && !(order->GetNonStopType() & ONSF_NO_STOP_AT_DESTINATION_STATION)) {
 								have_missing_wait = true;
 							}
 							if (order->GetTravelTime() == 0 && !order->IsTravelTimetabled()) {
@@ -632,6 +641,8 @@ struct TimetableWindow : Window {
 						}
 					}
 					if (have_bad_full_load) draw_info(STR_TIMETABLE_WARNING_FULL_LOAD, true);
+					if (have_conditional && HasBit(v->vehicle_flags, VF_AUTOFILL_TIMETABLE)) draw_info(STR_TIMETABLE_WARNING_AUTOFILL_CONDITIONAL, true);
+					if (total_time && have_non_timetabled_conditional_branch) draw_info(STR_TIMETABLE_NON_TIMETABLED_BRANCH, false);
 
 					if (warning_count != this->summary_warnings) {
 						TimetableWindow *mutable_this = const_cast<TimetableWindow *>(this);

@@ -1470,6 +1470,7 @@ public:
 		WID_GL_DELETE_GROUP                          = ::WID_GL_DELETE_GROUP,                          ///< Delete group button.
 		WID_GL_RENAME_GROUP                          = ::WID_GL_RENAME_GROUP,                          ///< Rename group button.
 		WID_GL_REPLACE_PROTECTION                    = ::WID_GL_REPLACE_PROTECTION,                    ///< Replace protection button.
+		WID_GL_INFO                                  = ::WID_GL_INFO,                                  ///< Group info.
 	};
 
 	/* automatically generated from ../../widgets/highscore_widget.h */
@@ -1612,11 +1613,11 @@ public:
 	/* automatically generated from ../../widgets/music_widget.h */
 	/** Widgets of the #MusicTrackSelectionWindow class. */
 	enum MusicTrackSelectionWidgets {
-		WID_MTS_LIST_LEFT                            = ::WID_MTS_LIST_LEFT,                            ///< Left list.
-		WID_MTS_LEFT_SCROLLBAR                       = ::WID_MTS_LEFT_SCROLLBAR,                       ///< Scrollbar of left list.
-		WID_MTS_PLAYLIST                             = ::WID_MTS_PLAYLIST,                             ///< Playlist name.
-		WID_MTS_LIST_RIGHT                           = ::WID_MTS_LIST_RIGHT,                           ///< Right list.
-		WID_MTS_RIGHT_SCROLLBAR                      = ::WID_MTS_RIGHT_SCROLLBAR,                      ///< Scrollbar of right list.
+		WID_MTS_CAPTION                              = ::WID_MTS_CAPTION,                              ///< Window caption.
+		WID_MTS_LIST_LEFT                            = ::WID_MTS_LIST_LEFT,                            ///< Left button.
+		WID_MTS_PLAYLIST                             = ::WID_MTS_PLAYLIST,                             ///< Playlist.
+		WID_MTS_LIST_RIGHT                           = ::WID_MTS_LIST_RIGHT,                           ///< Right button.
+		WID_MTS_MUSICSET                             = ::WID_MTS_MUSICSET,                             ///< Music set selection.
 		WID_MTS_ALL                                  = ::WID_MTS_ALL,                                  ///< All button.
 		WID_MTS_OLD                                  = ::WID_MTS_OLD,                                  ///< Old button.
 		WID_MTS_NEW                                  = ::WID_MTS_NEW,                                  ///< New button.
@@ -2432,7 +2433,7 @@ public:
 		WID_TN_TRAINS                                = ::WID_TN_TRAINS,                                ///< Train menu.
 		WID_TN_ROADVEHS                              = ::WID_TN_ROADVEHS,                              ///< Road vehicle menu.
 		WID_TN_SHIPS                                 = ::WID_TN_SHIPS,                                 ///< Ship menu.
-		WID_TN_AIRCRAFTS                             = ::WID_TN_AIRCRAFTS,                             ///< Aircraft menu.
+		WID_TN_AIRCRAFT                              = ::WID_TN_AIRCRAFT,                              ///< Aircraft menu.
 		WID_TN_ZOOM_IN                               = ::WID_TN_ZOOM_IN,                               ///< Zoom in the main viewport.
 		WID_TN_ZOOM_OUT                              = ::WID_TN_ZOOM_OUT,                              ///< Zoom out the main viewport.
 		WID_TN_BUILDING_TOOLS_START                  = ::WID_TN_BUILDING_TOOLS_START,                  ///< Helper for the offset of the building tools

@@ -35,28 +35,6 @@ static HouseClassMapping _class_mapping[HOUSE_CLASS_MAX];
 HouseOverrideManager _house_mngr(NEW_HOUSE_OFFSET, NUM_HOUSES, INVALID_HOUSE_ID);
 
 /**
- * Constructor of a house scope resolver.
- * @param ro Surrounding resolver.
- * @param house_id House type being queried.
- * @param tile %Tile containing the house.
- * @param town %Town containing the house.
- * @param not_yet_constructed House is still under construction.
- * @param initial_random_bits Random bits during construction checks.
- * @param watched_cargo_triggers Cargo types that triggered the watched cargo callback.
- */
-HouseScopeResolver::HouseScopeResolver(ResolverObject &ro, HouseID house_id, TileIndex tile, Town *town,
-			bool not_yet_constructed, uint8 initial_random_bits, uint32 watched_cargo_triggers)
-		: ScopeResolver(ro)
-{
-	this->house_id = house_id;
-	this->tile = tile;
-	this->town = town;
-	this->not_yet_constructed = not_yet_constructed;
-	this->initial_random_bits = initial_random_bits;
-	this->watched_cargo_triggers = watched_cargo_triggers;
-}
-
-/**
  * Retrieve the grf file associated with a house.
  * @param house_id House to query.
  * @return The associated GRF file (may be \c NULL).
@@ -81,7 +59,7 @@ static const GRFFile *GetHouseSpecGrf(HouseID house_id)
  */
 HouseResolverObject::HouseResolverObject(HouseID house_id, TileIndex tile, Town *town,
 		CallbackID callback, uint32 param1, uint32 param2,
-		bool not_yet_constructed, uint8 initial_random_bits, uint32 watched_cargo_triggers)
+		bool not_yet_constructed, uint8 initial_random_bits, CargoTypes watched_cargo_triggers)
 	: ResolverObject(GetHouseSpecGrf(house_id), callback, param1, param2)
 {
 	assert((tile != INVALID_TILE) == (town != NULL));
@@ -511,7 +489,7 @@ static uint32 GetDistanceFromNearbyHouse(uint8 parameter, TileIndex tile, HouseI
 }
 
 uint16 GetHouseCallback(CallbackID callback, uint32 param1, uint32 param2, HouseID house_id, Town *town, TileIndex tile,
-		bool not_yet_constructed, uint8 initial_random_bits, uint32 watched_cargo_triggers)
+		bool not_yet_constructed, uint8 initial_random_bits, CargoTypes watched_cargo_triggers)
 {
 	HouseResolverObject object(house_id, tile, town, callback, param1, param2,
 			not_yet_constructed, initial_random_bits, watched_cargo_triggers);
@@ -632,13 +610,13 @@ void DrawNewHouseTileInGUI(int x, int y, HouseID house_id, bool ground)
 }
 
 /* Simple wrapper for GetHouseCallback to keep the animation unified. */
-uint16 GetSimpleHouseCallback(CallbackID callback, uint32 param1, uint32 param2, const HouseSpec *spec, Town *town, TileIndex tile, uint32 extra_data)
+uint16 GetSimpleHouseCallback(CallbackID callback, uint32 param1, uint32 param2, const HouseSpec *spec, Town *town, TileIndex tile, CargoTypes extra_data)
 {
 	return GetHouseCallback(callback, param1, param2, spec - HouseSpec::Get(0), town, tile, false, 0, extra_data);
 }
 
 /** Helper class for animation control. */
-struct HouseAnimationBase : public AnimationBase<HouseAnimationBase, HouseSpec, Town, uint32, GetSimpleHouseCallback> {
+struct HouseAnimationBase : public AnimationBase<HouseAnimationBase, HouseSpec, Town, CargoTypes, GetSimpleHouseCallback> {
 	static const CallbackID cb_animation_speed      = CBID_HOUSE_ANIMATION_SPEED;
 	static const CallbackID cb_animation_next_frame = CBID_HOUSE_ANIMATION_NEXT_FRAME;
 
@@ -813,7 +791,7 @@ void TriggerHouse(TileIndex t, HouseTrigger trigger)
  * @param trigger_cargoes Cargo types that triggered the callback.
  * @param random Random bits.
  */
-void DoWatchedCargoCallback(TileIndex tile, TileIndex origin, uint32 trigger_cargoes, uint16 random)
+void DoWatchedCargoCallback(TileIndex tile, TileIndex origin, CargoTypes trigger_cargoes, uint16 random)
 {
 	TileIndexDiffC diff = TileIndexToTileIndexDiffC(origin, tile);
 	uint32 cb_info = random << 16 | (uint8)diff.y << 8 | (uint8)diff.x;
@@ -826,7 +804,7 @@ void DoWatchedCargoCallback(TileIndex tile, TileIndex origin, uint32 trigger_car
  * @param trigger_cargoes Triggering cargo types.
  * @pre IsTileType(t, MP_HOUSE)
  */
-void WatchedCargoCallback(TileIndex tile, uint32 trigger_cargoes)
+void WatchedCargoCallback(TileIndex tile, CargoTypes trigger_cargoes)
 {
 	assert(IsTileType(tile, MP_HOUSE));
 	HouseID id = GetHouseType(tile);

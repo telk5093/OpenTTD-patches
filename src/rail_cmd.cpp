@@ -38,6 +38,7 @@
 #include "programmable_signals.h"
 #include "spritecache.h"
 #include "core/container_func.hpp"
+#include "news_func.h"
 
 #include "table/strings.h"
 #include "table/railtypes.h"
@@ -570,8 +571,8 @@ CommandCost CmdBuildSingleRail(TileIndex tile, DoCommandFlag flags, uint32 p1, u
 				_rail_track_endtile = tile;
 				return_cmd_error(STR_ERROR_ALREADY_BUILT);
 			}
+			FALLTHROUGH;
 		}
-		FALLTHROUGH;
 
 		default: {
 			/* Will there be flat water on the lower halftile? */
@@ -3182,6 +3183,26 @@ static VehicleEnterTileStatus VehicleEnter_Track(Vehicle *u, TileIndex tile, int
 
 	Train *v = Train::From(u);
 
+	auto abort_load_through = [&](bool leave_station) {
+		if (_local_company == v->owner) {
+			SetDParam(0, v->index);
+			SetDParam(1, v->current_order.GetDestination());
+			AddNewsItem(STR_VEHICLE_LOAD_THROUGH_ABORTED_DEPOT, NT_ADVICE, NF_INCOLOUR | NF_SMALL | NF_VEHICLE_PARAM0,
+					NR_VEHICLE, v->index,
+					NR_STATION, v->current_order.GetDestination());
+		}
+		if (leave_station) {
+			v->LeaveStation();
+			/* Only advance to next order if we are loading at the current one */
+			const Order *order = v->GetOrder(v->cur_implicit_order_index);
+			if (order != NULL && order->IsType(OT_GOTO_STATION) && order->GetDestination() == v->last_station_visited) {
+				v->IncrementImplicitOrderIndex();
+			}
+		}
+	};
+
+	if (v->IsFrontEngine() && v->current_order.IsType(OT_LOADING_ADVANCE)) abort_load_through(true);
+
 	/* depot direction */
 	DiagDirection dir = GetRailDepotDirection(tile);
 
@@ -3202,6 +3223,13 @@ static VehicleEnterTileStatus VehicleEnter_Track(Vehicle *u, TileIndex tile, int
 	} else if (_fractcoords_enter[dir] == fract_coord) {
 		if (DiagDirToDir(ReverseDiagDir(dir)) == v->direction) {
 			/* enter the depot */
+
+			if (v->IsFrontEngine() && v->current_order.IsType(OT_LOADING_ADVANCE)) {
+				abort_load_through(true);
+			} else if (v->IsFrontEngine() && HasBit(v->flags, VRF_BEYOND_PLATFORM_END)) {
+				abort_load_through(false);
+			}
+
 			v->track = TRACK_BIT_DEPOT,
 			v->vehstatus |= VS_HIDDEN; // hide it
 			v->direction = ReverseDir(v->direction);

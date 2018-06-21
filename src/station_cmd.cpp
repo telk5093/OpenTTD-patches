@@ -442,12 +442,12 @@ void UpdateAllStationVirtCoords()
  * @param st Station to query
  * @return the expected mask
  */
-static uint GetAcceptanceMask(const Station *st)
+static CargoTypes GetAcceptanceMask(const Station *st)
 {
-	uint mask = 0;
+	CargoTypes mask = 0;
 
 	for (CargoID i = 0; i < NUM_CARGO; i++) {
-		if (HasBit(st->goods[i].status, GoodsEntry::GES_ACCEPTANCE)) mask |= 1 << i;
+		if (HasBit(st->goods[i].status, GoodsEntry::GES_ACCEPTANCE)) SetBit(mask, i);
 	}
 	return mask;
 }
@@ -526,7 +526,7 @@ CargoArray GetProductionAroundTiles(TileIndex tile, int w, int h, int rad)
  * @param rad Search radius in addition to given area
  * @param always_accepted bitmask of cargo accepted by houses and headquarters; can be NULL
  */
-CargoArray GetAcceptanceAroundTiles(TileIndex tile, int w, int h, int rad, uint32 *always_accepted)
+CargoArray GetAcceptanceAroundTiles(TileIndex tile, int w, int h, int rad, CargoTypes *always_accepted)
 {
 	CargoArray acceptance;
 	if (always_accepted != NULL) *always_accepted = 0;
@@ -564,7 +564,7 @@ CargoArray GetAcceptanceAroundTiles(TileIndex tile, int w, int h, int rad, uint3
 void UpdateStationAcceptance(Station *st, bool show_msg)
 {
 	/* old accepted goods types */
-	uint old_acc = GetAcceptanceMask(st);
+	CargoTypes old_acc = GetAcceptanceMask(st);
 
 	/* And retrieve the acceptance. */
 	CargoArray acceptance;
@@ -597,7 +597,7 @@ void UpdateStationAcceptance(Station *st, bool show_msg)
 	}
 
 	/* Only show a message in case the acceptance was actually changed. */
-	uint new_acc = GetAcceptanceMask(st);
+	CargoTypes new_acc = GetAcceptanceMask(st);
 	if (old_acc == new_acc) return;
 
 	/* show a message to report that the acceptance was changed? */
@@ -694,6 +694,9 @@ static CommandCost BuildStationPart(Station **st, DoCommandFlag flags, bool reus
 			(*st)->string_id = GenerateStationName(*st, area.tile, name_class);
 
 			if (Company::IsValidID(_current_company)) {
+				if (_local_company == _current_company && !HasBit((*st)->town->have_ratings, _current_company)) {
+					ZoningTownAuthorityRatingChange();
+				}
 				SetBit((*st)->town->have_ratings, _current_company);
 			}
 		}
@@ -961,6 +964,8 @@ static CommandCost CheckFlatLandRoadStop(TileArea tile_area, DoCommandFlag flags
 					}
 					num_roadbits += CountBits(GetRoadBits(cur_tile, ROADTYPE_ROAD));
 				}
+
+				if (GetDisallowedRoadDirections(cur_tile) != DRD_NONE) return_cmd_error(STR_ERROR_DRIVE_THROUGH_ON_ONEWAY_ROAD);
 
 				/* There is a tram, check if we can build road+tram stop over it. */
 				if (HasBit(cur_rts, ROADTYPE_TRAM)) {
@@ -3300,12 +3305,16 @@ static VehicleEnterTileStatus VehicleEnter_Station(Vehicle *v, TileIndex tile, i
 			// reverse at waypoint
 			if (t->reverse_distance == 0) t->reverse_distance = t->gcache.cached_total_length;
 		}
-		if (!v->current_order.ShouldStopAtStation(v, station_id)) return VETSB_CONTINUE;
-		if (!IsRailStation(tile) || !v->IsFrontEngine()) return VETSB_CONTINUE;
+		if (HasBit(Train::From(v)->flags, VRF_BEYOND_PLATFORM_END)) return VETSB_CONTINUE;
+		Train *front = Train::From(v)->First();
+		if (!front->IsFrontEngine()) return VETSB_CONTINUE;
+		if (!(v == front || HasBit(Train::From(v)->Previous()->flags, VRF_BEYOND_PLATFORM_END))) return VETSB_CONTINUE;
+		if (!IsRailStation(tile)) return VETSB_CONTINUE;
+		if (!front->current_order.ShouldStopAtStation(front, station_id)) return VETSB_CONTINUE;
 
 		int station_ahead;
 		int station_length;
-		int stop = GetTrainStopLocation(station_id, tile, Train::From(v), &station_ahead, &station_length);
+		int stop = GetTrainStopLocation(station_id, tile, Train::From(v), &station_ahead, &station_length, x, y);
 
 		/* Stop whenever that amount of station ahead + the distance from the
 		 * begin of the platform to the stop location is longer than the length
@@ -3326,9 +3335,9 @@ static VehicleEnterTileStatus VehicleEnter_Station(Vehicle *v, TileIndex tile, i
 			if (x == stop) {
 				return VETSB_ENTERED_STATION | (VehicleEnterTileStatus)(station_id << VETS_STATION_ID_OFFSET); // enter station
 			} else if (x < stop) {
-				v->vehstatus |= VS_TRAIN_SLOWING;
+				front->vehstatus |= VS_TRAIN_SLOWING;
 				uint16 spd = max(0, (stop - x) * 20 - 15);
-				if (spd < v->cur_speed) v->cur_speed = spd;
+				if (spd < front->cur_speed) front->cur_speed = spd;
 			}
 		}
 	} else if (v->type == VEH_ROAD) {
@@ -3351,7 +3360,7 @@ static VehicleEnterTileStatus VehicleEnter_Station(Vehicle *v, TileIndex tile, i
 void TriggerWatchedCargoCallbacks(Station *st)
 {
 	/* Collect cargoes accepted since the last big tick. */
-	uint cargoes = 0;
+	CargoTypes cargoes = 0;
 	for (CargoID cid = 0; cid < NUM_CARGO; cid++) {
 		if (HasBit(st->goods[cid].status, GoodsEntry::GES_ACCEPTED_BIGTICK)) SetBit(cargoes, cid);
 	}
@@ -3478,7 +3487,7 @@ static void UpdateStationRating(Station *st)
 
 				uint32 var18 = min(ge->time_since_pickup, 0xFF) | (min(ge->max_waiting_cargo, 0xFFFF) << 8) | (min(last_speed, 0xFF) << 24);
 				/* Convert to the 'old' vehicle types */
-				uint32 var10 = (st->last_vehicle_type == VEH_INVALID) ? 0x0 : (st->last_vehicle_type + 0x10);
+				uint32 var10 = (ge->last_vehicle_type == VEH_INVALID) ? 0x0 : (ge->last_vehicle_type + 0x10);
 				uint16 callback = GetCargoCallback(CBID_CARGO_STATION_RATING_CALC, var10, var18, cs);
 				if (callback != CALLBACK_FAILED) {
 					skip = true;
@@ -3493,8 +3502,19 @@ static void UpdateStationRating(Station *st)
 				int b = ge->last_speed - 85;
 				if (b >= 0) rating += b >> 2;
 
-				byte waittime = ge->time_since_pickup;
-				if (st->last_vehicle_type == VEH_SHIP) waittime >>= 2;
+				uint waittime = ge->time_since_pickup;
+				if (_settings_game.station.cargo_class_rating_wait_time) {
+					if (cs->classes & CC_PASSENGERS) {
+						waittime *= 3;
+					} else if (cs->classes & CC_REFRIGERATED) {
+						waittime *= 2;
+					} else if (cs->classes & (CC_MAIL | CC_ARMOURED | CC_EXPRESS)) {
+						waittime += (waittime >> 1);
+					} else if (cs->classes & (CC_BULK | CC_LIQUID)) {
+						waittime >>= 2;
+					}
+				}
+				if (ge->last_vehicle_type == VEH_SHIP) waittime >>= 2;
 				(waittime > 21) ||
 				(rating += 25, waittime > 12) ||
 				(rating += 25, waittime > 6) ||

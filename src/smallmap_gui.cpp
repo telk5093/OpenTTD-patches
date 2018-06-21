@@ -620,8 +620,6 @@ void SmallMapWindow::SetZoomLevel(ZoomLevelChange change, const Point *zoom_pt)
 			Point new_tile = this->PixelToTile(zoom_pt->x, zoom_pt->y, &sub);
 			this->SetNewScroll(this->scroll_x + (tile.x - new_tile.x) * TILE_SIZE,
 					this->scroll_y + (tile.y - new_tile.y) * TILE_SIZE, sub);
-		} else if (this->map_type == SMT_LINKSTATS) {
-			this->overlay->RebuildCache();
 		}
 		this->SetWidgetDisabledState(WID_SM_ZOOM_IN,  this->zoom == zoomlevels[MIN_ZOOM_INDEX]);
 		this->SetWidgetDisabledState(WID_SM_ZOOM_OUT, this->zoom == zoomlevels[MAX_ZOOM_INDEX]);
@@ -1266,7 +1264,7 @@ void SmallMapWindow::SelectLegendItem(int click_pos, LegendAndColour *legend, in
  */
 void SmallMapWindow::SetOverlayCargoMask()
 {
-	uint32 cargo_mask = 0;
+	CargoTypes cargo_mask = 0;
 	for (int i = 0; i != _smallmap_cargo_count; ++i) {
 		if (_legend_linkstats[i].show_on_map) SetBit(cargo_mask, _legend_linkstats[i].type);
 	}
@@ -1493,7 +1491,7 @@ int SmallMapWindow::GetPositionOnLegend(Point pt)
 
 /* virtual */ void SmallMapWindow::OnMouseWheel(int wheel)
 {
-	if (_settings_client.gui.scrollwheel_scrolling == 0) {
+	if (_settings_client.gui.scrollwheel_scrolling != 2) {
 		const NWidgetBase *wid = this->GetWidget<NWidgetBase>(WID_SM_MAP);
 		int cursor_x = _cursor.pos.x - this->left - wid->pos_x;
 		int cursor_y = _cursor.pos.y - this->top  - wid->pos_y;
@@ -1557,12 +1555,11 @@ void SmallMapWindow::SetNewScroll(int sx, int sy, int sub)
 	this->scroll_x = sx;
 	this->scroll_y = sy;
 	this->subscroll = sub;
-	if (this->map_type == SMT_LINKSTATS) this->overlay->RebuildCache();
 }
 
 /* virtual */ void SmallMapWindow::OnScroll(Point delta)
 {
-	_cursor.fix_at = true;
+	if (_settings_client.gui.scroll_mode == VSM_VIEWPORT_RMB_FIXED || _settings_client.gui.scroll_mode == VSM_MAP_RMB_FIXED) _cursor.fix_at = true;
 
 	/* While tile is at (delta.x, delta.y)? */
 	int sub;

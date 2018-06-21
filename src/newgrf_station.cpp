@@ -579,23 +579,6 @@ StationResolverObject::~StationResolverObject()
 }
 
 /**
- * Constructor for station scopes.
- * @param ro Surrounding resolver.
- * @param statspec Station (type) specification.
- * @param st Instance of the station.
- * @param tile %Tile of the station.
- */
-StationScopeResolver::StationScopeResolver(ResolverObject &ro, const StationSpec *statspec, BaseStation *st, TileIndex tile)
-	: ScopeResolver(ro)
-{
-	this->tile = tile;
-	this->st = st;
-	this->statspec = statspec;
-	this->cargo_type = CT_INVALID;
-	this->axis = INVALID_AXIS;
-}
-
-/**
  * Resolve sprites for drawing a station tile.
  * @param statspec Station spec
  * @param st Station (NULL in GUI)
@@ -980,7 +963,7 @@ void TriggerStationRandomisation(Station *st, TileIndex tile, StationRandomTrigg
 	uint32 whole_reseed = 0;
 	ETileArea area = ETileArea(st, tile, tas[trigger]);
 
-	uint32 empty_mask = 0;
+	CargoTypes empty_mask = 0;
 	if (trigger == SRT_CARGO_TAKEN) {
 		/* Create a bitmask of completely empty cargo types to be matched */
 		for (CargoID i = 0; i < NUM_CARGO; i++) {

@@ -37,9 +37,6 @@
 StationPool _station_pool("Station");
 INSTANTIATE_POOL_METHODS(Station)
 
-typedef StationIDStack::SmallStackPool StationIDStackPool;
-template<> StationIDStackPool StationIDStack::_pool = StationIDStackPool();
-
 BaseStation::~BaseStation()
 {
 	free(this->name);
@@ -63,8 +60,7 @@ Station::Station(TileIndex tile) :
 	dock_station(INVALID_TILE, 0, 0),
 	indtype(IT_INVALID),
 	time_since_load(255),
-	time_since_unload(255),
-	last_vehicle_type(VEH_INVALID)
+	time_since_unload(255)
 {
 	/* this->random_bits is set in Station::AddFacility() */
 }
@@ -311,6 +307,14 @@ Rect Station::GetCatchmentRectUsingRadius(uint catchment_radius) const
 	};
 
 	return ret;
+}
+
+bool Station::IsDockingTile(TileIndex tile) const
+{
+	for (const Dock *d = this->docks; d != NULL; d = d->next) {
+		if (tile == d->GetDockingTile()) return true;
+	}
+	return false;
 }
 
 /** Rect and pointer to IndustryVector */

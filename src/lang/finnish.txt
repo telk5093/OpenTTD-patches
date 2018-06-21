@@ -668,10 +668,7 @@ STR_MUSIC_TOOLTIP_SELECT_CUSTOM_2_USER_DEFINED                  :{BLACK}Valitse 
 STR_MUSIC_TOOLTIP_TOGGLE_PROGRAM_SHUFFLE                        :{BLACK}Sekoittaminen päälle/pois
 STR_MUSIC_TOOLTIP_SHOW_MUSIC_TRACK_SELECTION                    :{BLACK}Näytä musiikkiraitojen valintaikkuna
 
-STR_ERROR_NO_SONGS                                              :{WHITE}Musiikkipaketti jossa ei ole kappaleita on valittu. Musiikkia ei soiteta
-
 # Playlist window
-STR_PLAYLIST_MUSIC_PROGRAM_SELECTION                            :{WHITE}Soittolistan valinta
 STR_PLAYLIST_TRACK_NAME                                         :{TINY_FONT}{LTBLUE}{ZEROFILL_NUM} "{STRING}"
 STR_PLAYLIST_TRACK_INDEX                                        :{TINY_FONT}{BLACK}Raita
 STR_PLAYLIST_PROGRAM                                            :{TINY_FONT}{BLACK}Soittolista - '{STRING}'
@@ -1336,8 +1333,6 @@ STR_CONFIG_SETTING_SMALLMAP_LAND_COLOUR_HELPTEXT                :Maaston väri k
 STR_CONFIG_SETTING_SMALLMAP_LAND_COLOUR_GREEN                   :Vihreä
 STR_CONFIG_SETTING_SMALLMAP_LAND_COLOUR_DARK_GREEN              :Tummanvihreä
 STR_CONFIG_SETTING_SMALLMAP_LAND_COLOUR_VIOLET                  :Violetti
-STR_CONFIG_SETTING_REVERSE_SCROLLING                            :Käänteinen vierityssuunta: {STRING}
-STR_CONFIG_SETTING_REVERSE_SCROLLING_HELPTEXT                   :Käyttäytyminen siirrettäessä näkymää oikealla hiiren näppäimellä. Mikäli pois käytöstä, hiiri liikuttaa kameraa. Mikäli käytössä, hiiri liikuttaa karttaa
 STR_CONFIG_SETTING_SMOOTH_SCROLLING                             :Näkymän tasainen vieritys: {STRING}
 STR_CONFIG_SETTING_SMOOTH_SCROLLING_HELPTEXT                    :Hallitse miten päänäkymä siirtyy valittuun paikkaan karttaa klikattaessa tai käytettäessä komentoa joka muuttaa näkymän sijaintia. Mikäli käytössä, päänäkymä siirtyy uuteen sijaintiin pehmeäesti, muutoin se hyppää suoraan valittuun sijaintiin
 STR_CONFIG_SETTING_MEASURE_TOOLTIP                              :Näytä mittauksen työkaluvihje, kun käytetään rakennustyökaluja: {STRING}
@@ -1369,8 +1364,6 @@ STR_CONFIG_SETTING_RIGHT_MOUSE_BTN_EMU_COMMAND                  :Command
 STR_CONFIG_SETTING_RIGHT_MOUSE_BTN_EMU_CONTROL                  :Ctrl+Klik
 STR_CONFIG_SETTING_RIGHT_MOUSE_BTN_EMU_OFF                      :Pois
 
-STR_CONFIG_SETTING_LEFT_MOUSE_BTN_SCROLLING                     :Vasemmalla hiiren painikkeella liikkuminen: {STRING}
-STR_CONFIG_SETTING_LEFT_MOUSE_BTN_SCROLLING_HELPTEXT            :Salli näkymän siirtäminen vetämällä hiiren vasemmalla näppäimellä. Hyödyllinen erityisesti kosketusnäyttöä käytettäessä
 STR_CONFIG_SETTING_RIGHT_MOUSE_WND_CLOSE                        :Sulje ikkuna hiiren oikealla painikkeella napsauttamalla: {STRING}
 STR_CONFIG_SETTING_RIGHT_MOUSE_WND_CLOSE_HELPTEXT               :Ikkunat sulkeutuvat, kun niitä napsautetaan hiiren oikealla painikkeella. Tämä korvaa tavallisesti näkyvän työkaluvihjeen!
 
@@ -2688,7 +2681,7 @@ STR_LAI_OBJECT_DESCRIPTION_COMPANY_OWNED_LAND                   :Yhtiön omistam
 STR_ABOUT_OPENTTD                                               :{WHITE}Tietoja OpenTTD:stä
 STR_ABOUT_ORIGINAL_COPYRIGHT                                    :{BLACK}Alkuperäiset oikeudet {COPYRIGHT} 1995 Chris Sawyer, kaikki oikeudet pidätetään
 STR_ABOUT_VERSION                                               :{BLACK}OpenTTD-versio {REV}
-STR_ABOUT_COPYRIGHT_OPENTTD                                     :{BLACK}OpenTTD {COPYRIGHT} 2002-2017 The OpenTTD team
+STR_ABOUT_COPYRIGHT_OPENTTD                                     :{BLACK}OpenTTD {COPYRIGHT} 2002-2018 The OpenTTD team
 
 # Save/load game/scenario
 STR_SAVELOAD_SAVE_CAPTION                                       :{WHITE}Tallenna peli
@@ -2981,8 +2974,6 @@ STR_TOWN_POPULATION                                             :{BLACK}Maailman
 STR_TOWN_VIEW_TOWN_CAPTION                                      :{WHITE}{TOWN}
 STR_TOWN_VIEW_CITY_CAPTION                                      :{WHITE}{TOWN} (City)
 STR_TOWN_VIEW_POPULATION_HOUSES                                 :{BLACK}Asukasluku: {ORANGE}{COMMA}{BLACK}  Taloja: {ORANGE}{COMMA}
-STR_TOWN_VIEW_PASSENGERS_LAST_MONTH_MAX                         :{BLACK}Matkustajia viime kuussa: {ORANGE}{COMMA}{BLACK}  max: {ORANGE}{COMMA}
-STR_TOWN_VIEW_MAIL_LAST_MONTH_MAX                               :{BLACK}Postia viime kuussa: {ORANGE}{COMMA}{BLACK}  max: {ORANGE}{COMMA}
 STR_TOWN_VIEW_CARGO_FOR_TOWNGROWTH                              :{BLACK}Kaupungin kasvuun tarvittava rahti:
 STR_TOWN_VIEW_CARGO_FOR_TOWNGROWTH_REQUIRED_GENERAL             :{ORANGE}{STRING}{RED} vaadittu
 STR_TOWN_VIEW_CARGO_FOR_TOWNGROWTH_REQUIRED_WINTER              :{ORANGE}{STRING}{BLACK} vaaditaan talvella
@@ -3295,9 +3286,9 @@ STR_INDUSTRY_VIEW_REQUIRES_CARGO_CARGO                          :{BLACK}Tarvitse
 STR_INDUSTRY_VIEW_REQUIRES_CARGO_CARGO_CARGO                    :{BLACK}Tarvitsee: {YELLOW}{STRING}{STRING}, {STRING}{STRING}, {STRING}{STRING}
 ############ range for requires ends
 
-STR_INDUSTRY_VIEW_REQUIRES                                      :{BLACK}Tarvitsee
-STR_INDUSTRY_VIEW_ACCEPT_CARGO                                  :{YELLOW}{STRING}
-STR_INDUSTRY_VIEW_ACCEPT_CARGO_AMOUNT                           :{YELLOW}{CARGO_LONG} {BLACK}odottamassa
+STR_INDUSTRY_VIEW_REQUIRES                                      :{BLACK}Tarvitsee:
+STR_INDUSTRY_VIEW_ACCEPT_CARGO                                  :{YELLOW}{STRING}{BLACK}{3:STRING}
+STR_INDUSTRY_VIEW_ACCEPT_CARGO_AMOUNT                           :{YELLOW}{STRING}{BLACK}: {CARGO_SHORT} odottamassa{STRING}
 
 ############ range for produces starts
 STR_INDUSTRY_VIEW_PRODUCES_CARGO                                :{BLACK}Tuottaa: {YELLOW}{STRING}{STRING}

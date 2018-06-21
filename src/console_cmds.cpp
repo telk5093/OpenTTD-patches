@@ -42,6 +42,7 @@
 #include "aircraft.h"
 #include "airport.h"
 #include "station_base.h"
+#include "economy_func.h"
 
 #include "safeguards.h"
 
@@ -1337,9 +1338,7 @@ DEF_CONSOLE_CMD(ConGetDate)
 		return true;
 	}
 
-	YearMonthDay ymd;
-	ConvertDateToYMD(_date, &ymd);
-	IConsolePrintF(CC_DEFAULT, "Date: %d-%d-%d", ymd.day, ymd.month + 1, ymd.year);
+	IConsolePrintF(CC_DEFAULT, "Date: %d-%d-%d", _cur_date_ymd.day, _cur_date_ymd.month + 1, _cur_date_ymd.year);
 	return true;
 }
 
@@ -1973,6 +1972,36 @@ DEF_CONSOLE_CMD(ConDumpCommandLog)
 	return true;
 }
 
+DEF_CONSOLE_CMD(ConDumpInflation)
+{
+	if (argc == 0) {
+		IConsoleHelp("Dump inflation data.");
+		return true;
+	}
+
+	IConsolePrintF(CC_DEFAULT, "interest_rate: %u", _economy.interest_rate);
+	IConsolePrintF(CC_DEFAULT, "infl_amount: %u", _economy.infl_amount);
+	IConsolePrintF(CC_DEFAULT, "infl_amount_pr: %u", _economy.infl_amount_pr);
+	IConsolePrintF(CC_DEFAULT, "inflation_prices: %f", _economy.inflation_prices / 65536.0);
+	IConsolePrintF(CC_DEFAULT, "inflation_payment: %f", _economy.inflation_payment / 65536.0);
+	IConsolePrintF(CC_DEFAULT, "inflation ratio: %f", (double) _economy.inflation_prices / (double) _economy.inflation_payment);
+	return true;
+}
+
+DEF_CONSOLE_CMD(ConDumpCpdpStats)
+{
+	if (argc == 0) {
+		IConsoleHelp("Dump cargo packet deferred payment stats.");
+		return true;
+	}
+
+	extern void DumpCargoPacketDeferredPaymentStats(char *buffer, const char *last);
+	char buffer[32768];
+	DumpCargoPacketDeferredPaymentStats(buffer, lastof(buffer));
+	PrintLineByLine(buffer);
+	return true;
+}
+
 DEF_CONSOLE_CMD(ConCheckCaches)
 {
 	if (argc == 0) {
@@ -1989,6 +2018,19 @@ DEF_CONSOLE_CMD(ConCheckCaches)
 		extern void CheckCaches(bool force_check);
 		CheckCaches(true);
 	}
+
+	return true;
+}
+
+DEF_CONSOLE_CMD(ConDoDisaster)
+{
+	if (argc == 0) {
+		IConsoleHelp("Debug: Do disaster");
+		return true;
+	}
+
+	extern void DoDisaster();
+	DoDisaster();
 
 	return true;
 }
@@ -2140,10 +2182,13 @@ void IConsoleStdLibRegister()
 	IConsoleDebugLibRegister();
 #endif
 	IConsoleCmdRegister("dump_command_log", ConDumpCommandLog, nullptr, true);
+	IConsoleCmdRegister("dump_inflation", ConDumpInflation, nullptr, true);
+	IConsoleCmdRegister("dump_cpdp_stats", ConDumpCpdpStats, nullptr, true);
 	IConsoleCmdRegister("check_caches", ConCheckCaches, nullptr, true);
 
 	/* NewGRF development stuff */
 	IConsoleCmdRegister("reload_newgrfs",  ConNewGRFReload, ConHookNewGRFDeveloperTool);
+	IConsoleCmdRegister("do_disaster", ConDoDisaster, ConHookNewGRFDeveloperTool, true);
 
 	/* Bug workarounds */
 	IConsoleCmdRegister("jgrpp_bug_workaround_unblock_heliports", ConResetBlockedHeliports, ConHookNoNetwork, true);

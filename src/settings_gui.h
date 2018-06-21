@@ -13,6 +13,7 @@
 #define SETTING_GUI_H
 
 #include "gfx_type.h"
+#include "widgets/dropdown_type.h"
 
 extern int SETTING_BUTTON_WIDTH; ///< Width of setting buttons
 extern int SETTING_BUTTON_HEIGHT; ///< Height of setting buttons
@@ -20,6 +21,11 @@ extern int SETTING_BUTTON_HEIGHT; ///< Height of setting buttons
 void DrawArrowButtons(int x, int y, Colours button_colour, byte state, bool clickable_left, bool clickable_right);
 void DrawDropDownButton(int x, int y, Colours button_colour, bool state, bool clickable);
 void DrawBoolButton(int x, int y, bool state, bool clickable);
+
+DropDownList *BuildMusicSetDropDownList(int *selected_index);
+
+/* Actually implemented in music_gui.cpp */
+void ChangeMusicSet(int index);
 
 #endif /* SETTING_GUI_H */
 

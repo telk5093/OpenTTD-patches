@@ -18,9 +18,12 @@
 #include "../newgrf_station.h"
 
 #include "saveload.h"
+#include "saveload_buffer.h"
 #include "table/strings.h"
 
 #include "../safeguards.h"
+
+static byte _old_last_vehicle_type;
 
 /**
  * Update the buoy orders to be waypoint orders.
@@ -218,7 +221,7 @@ static const SaveLoad _old_station_desc[] = {
 	SLE_CONDVAR(Station, airport.flags,              SLE_UINT64,                 46, SL_MAX_VERSION),
 
 	SLE_CONDNULL(2, 0, 25), ///< last-vehicle
-	SLE_CONDVAR(Station, last_vehicle_type,          SLE_UINT8,                  26, SL_MAX_VERSION),
+	SLEG_CONDVAR_X(_old_last_vehicle_type,           SLE_UINT8,                  26, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_ST_LAST_VEH_TYPE, 0, 0)),
 
 	SLE_CONDNULL(2, 3, 25), ///< custom station class and id
 	SLE_CONDVAR(Station, build_date,                 SLE_FILE_U16 | SLE_VAR_I32,  3, 30),
@@ -265,6 +268,7 @@ struct FlowSaveLoad {
 	bool restricted;
 };
 
+#if 0
 static const SaveLoad _flow_desc[] = {
 	    SLE_VAR(FlowSaveLoad, source,     SLE_UINT16),
 	    SLE_VAR(FlowSaveLoad, via,        SLE_UINT16),
@@ -272,6 +276,7 @@ static const SaveLoad _flow_desc[] = {
 	SLE_CONDVAR(FlowSaveLoad, restricted, SLE_BOOL, 187, SL_MAX_VERSION),
 	    SLE_END()
 };
+#endif
 
 /**
  * Wrapper function to get the GoodsEntry's internal structure while
@@ -303,6 +308,7 @@ const SaveLoad *GetGoodsDesc()
 		 SLE_CONDVAR(GoodsEntry, node,                 SLE_UINT16,                183, SL_MAX_VERSION),
 		SLEG_CONDVAR(            _num_flows,           SLE_UINT32,                183, SL_MAX_VERSION),
 		 SLE_CONDVAR(GoodsEntry, max_waiting_cargo,    SLE_UINT32,                183, SL_MAX_VERSION),
+		SLE_CONDVAR_X(GoodsEntry, last_vehicle_type,   SLE_UINT8,                   0, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_ST_LAST_VEH_TYPE, 1)),
 		SLE_END()
 	};
 
@@ -376,6 +382,7 @@ static void Load_STNS()
 					SB(ge->status, GoodsEntry::GES_RATING, 1, 1);
 				}
 			}
+			if (SlXvIsFeatureMissing(XSLFI_ST_LAST_VEH_TYPE)) ge->last_vehicle_type = _old_last_vehicle_type;
 		}
 
 		if (st->num_specs != 0) {
@@ -457,7 +464,7 @@ static const SaveLoad _station_desc[] = {
 
 	      SLE_VAR(Station, time_since_load,            SLE_UINT8),
 	      SLE_VAR(Station, time_since_unload,          SLE_UINT8),
-	      SLE_VAR(Station, last_vehicle_type,          SLE_UINT8),
+	SLEG_CONDVAR_X(_old_last_vehicle_type,             SLE_UINT8,                   0, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_ST_LAST_VEH_TYPE, 0, 0)),
 	      SLE_VAR(Station, had_vehicle_of_type,        SLE_UINT8),
 	      SLE_VEC(Station, loading_vehicles,           REF_VEHICLE),
 	  SLE_CONDVAR(Station, always_accepted,            SLE_UINT32, 127, SL_MAX_VERSION),
@@ -492,6 +499,8 @@ static void RealSave_STNN(BaseStation *bst)
 	bool waypoint = (bst->facilities & FACIL_WAYPOINT) != 0;
 	SlObject(bst, waypoint ? _waypoint_desc : _station_desc);
 
+	MemoryDumper *dumper = MemoryDumper::GetCurrent();
+
 	if (!waypoint) {
 		Station *st = Station::From(bst);
 		for (CargoID i = 0; i < NUM_CARGO; i++) {
@@ -512,7 +521,13 @@ static void RealSave_STNN(BaseStation *bst)
 					flow.restricted = inner_it->first > outer_it->second.GetUnrestricted();
 					sum_shares = inner_it->first;
 					assert(flow.share > 0);
-					SlObject(&flow, _flow_desc);
+
+					// SlObject(&flow, _flow_desc); /* this is highly performance-sensitive, manually unroll */
+					dumper->CheckBytes(2 + 2 + 4 + 1);
+					dumper->RawWriteUint16(flow.source);
+					dumper->RawWriteUint16(flow.via);
+					dumper->RawWriteUint32(flow.share);
+					dumper->RawWriteByte(flow.restricted != 0);
 				}
 			}
 			for (StationCargoPacketMap::ConstMapIterator it(st->goods[i].cargo.Packets()->begin()); it != st->goods[i].cargo.Packets()->end(); ++it) {
@@ -540,6 +555,8 @@ static void Load_STNN()
 {
 	_num_flows = 0;
 
+	ReadBuffer *buffer = ReadBuffer::GetCurrent();
+
 	int index;
 	while ((index = SlIterateArray()) != -1) {
 		bool waypoint = (SlReadByte() & FACIL_WAYPOINT) != 0;
@@ -564,7 +581,13 @@ static void Load_STNN()
 				FlowStat *fs = NULL;
 				StationID prev_source = INVALID_STATION;
 				for (uint32 j = 0; j < _num_flows; ++j) {
-					SlObject(&flow, _flow_desc);
+					// SlObject(&flow, _flow_desc); /* this is highly performance-sensitive, manually unroll */
+					buffer->CheckBytes(2 + 2 + 4);
+					flow.source = buffer->RawReadUint16();
+					flow.via = buffer->RawReadUint16();
+					flow.share = buffer->RawReadUint32();
+					if (!IsSavegameVersionBefore(187)) flow.restricted = (buffer->ReadByte() != 0);
+
 					if (fs == NULL || prev_source != flow.source) {
 						fs = &(st->goods[i].flows.insert(std::make_pair(flow.source, FlowStat(flow.via, flow.share, flow.restricted))).first->second);
 					} else {
@@ -582,6 +605,7 @@ static void Load_STNN()
 						assert(pair.second.empty());
 					}
 				}
+				if (SlXvIsFeatureMissing(XSLFI_ST_LAST_VEH_TYPE)) st->goods[i].last_vehicle_type = _old_last_vehicle_type;
 			}
 		}
 

@@ -549,7 +549,7 @@ public:
 
 		/* Disable all lists management button when the list is empty */
 		this->SetWidgetDisabledState(WID_GL_MANAGE_VEHICLES_DROPDOWN, !this->ShouldShowActionDropdownList() || _local_company != this->vli.company);
-		this->SetWidgetsDisabledState(this->vehicles.Length() == 0 || _local_company != this->vli.company,
+		this->SetWidgetsDisabledState(this->vehicles.Length() == 0 || _local_company != this->vli.company || (IsTopLevelGroupID(this->vli.index) && _settings_client.gui.disable_top_veh_list_mass_actions),
 				WID_GL_STOP_ALL,
 				WID_GL_START_ALL,
 				WIDGET_LIST_END);
@@ -818,7 +818,8 @@ public:
 				break;
 
 			case WID_GL_MANAGE_VEHICLES_DROPDOWN: {
-				DropDownList *list = this->BuildActionDropdownList(true, Group::IsValidID(this->vli.index), this->vli.vtype == VEH_TRAIN);
+				DropDownList *list = this->BuildActionDropdownList(true, Group::IsValidID(this->vli.index), this->vli.vtype == VEH_TRAIN,
+						0, false, IsTopLevelGroupID(this->vli.index));
 				ShowDropDownList(this, list, -1, WID_GL_MANAGE_VEHICLES_DROPDOWN);
 				break;
 			}
@@ -952,7 +953,7 @@ public:
 				switch (index) {
 					case ADI_TEMPLATE_REPLACE: // TemplateReplace Window
 						if (vli.vtype == VEH_TRAIN) {
-							ShowTemplateReplaceWindow(this->unitnumber_digits, this->resize.step_height);
+							ShowTemplateReplaceWindow(this->unitnumber_digits);
 						}
 						break;
 					case ADI_REPLACE: // Replace window
@@ -963,6 +964,9 @@ public:
 						DoCommandP(0, DEPOT_MASS_SEND | (index == ADI_SERVICE ? DEPOT_SERVICE : 0U), this->vli.Pack(), GetCmdSendToDepot(this->vli.vtype));
 						break;
 					}
+					case ADI_CANCEL_DEPOT:
+						DoCommandP(0, DEPOT_MASS_SEND | DEPOT_CANCEL, this->vli.Pack(), GetCmdSendToDepot(this->vli.vtype));
+						break;
 
 					case ADI_ADD_SHARED: // Add shared Vehicles
 						assert(Group::IsValidID(this->vli.index));

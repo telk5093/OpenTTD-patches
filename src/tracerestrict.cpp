@@ -198,7 +198,8 @@ static bool TestOrderCondition(const Order *order, TraceRestrictItem item)
 		DestinationID condvalue = GetTraceRestrictValue(item);
 		switch (static_cast<TraceRestrictOrderCondAuxField>(GetTraceRestrictAuxField(item))) {
 			case TROCAF_STATION:
-				result = order->IsType(OT_GOTO_STATION) && order->GetDestination() == condvalue;
+				result = (order->IsType(OT_GOTO_STATION) || order->IsType(OT_LOADING_ADVANCE))
+						&& order->GetDestination() == condvalue;
 				break;
 
 			case TROCAF_WAYPOINT:
@@ -1497,8 +1498,11 @@ void TraceRestrictSlot::DeIndex(VehicleID id)
 	auto range = slot_vehicle_index.equal_range(id);
 	for (auto it = range.first; it != range.second; ++it) {
 		if (it->second == this->index) {
+			bool is_first_in_range = (it == range.first);
+
 			auto next = slot_vehicle_index.erase(it);
-			if (it == range.first && next == range.second) {
+
+			if (is_first_in_range && next == range.second) {
 				/* Only one item, which we've just erased, clear the vehicle flag */
 				ClrBit(Train::Get(id)->flags, VRF_HAVE_SLOT);
 			}
@@ -1572,6 +1576,7 @@ void TraceRestrictGetVehicleSlots(VehicleID id, std::vector<TraceRestrictSlotID>
 /**
  * This is called when a slot is about to be deleted
  * Scan program pool and change any references to it to the invalid group ID, to avoid dangling references
+ * Scan order list and change any references to it to the invalid group ID, to avoid dangling slot condition references
  */
 void TraceRestrictRemoveSlotID(TraceRestrictSlotID index)
 {
@@ -1590,8 +1595,21 @@ void TraceRestrictRemoveSlotID(TraceRestrictSlotID index)
 		}
 	}
 
+	bool changed_order = false;
+	Order *o;
+	FOR_ALL_ORDERS(o) {
+		if (o->IsType(OT_CONDITIONAL) && o->GetConditionVariable() == OCV_SLOT_OCCUPANCY && o->GetXData() == index) {
+			o->GetXDataRef() = INVALID_TRACE_RESTRICT_SLOT_ID;
+			changed_order = true;
+		}
+	}
+
 	// update windows
 	InvalidateWindowClassesData(WC_TRACE_RESTRICT);
+	if (changed_order) {
+		InvalidateWindowClassesData(WC_VEHICLE_ORDERS);
+		InvalidateWindowClassesData(WC_VEHICLE_TIMETABLE);
+	}
 }
 
 static bool IsUniqueSlotName(const char *name)
@@ -1658,6 +1676,7 @@ CommandCost CmdDeleteTraceRestrictSlot(TileIndex tile, DoCommandFlag flags, uint
 
 		InvalidateWindowClassesData(WC_TRACE_RESTRICT);
 		InvalidateWindowClassesData(WC_TRACE_RESTRICT_SLOTS);
+		InvalidateWindowClassesData(WC_VEHICLE_ORDERS);
 	}
 
 	return CommandCost();
@@ -1704,6 +1723,7 @@ CommandCost CmdAlterTraceRestrictSlot(TileIndex tile, DoCommandFlag flags, uint3
 		// update windows
 		InvalidateWindowClassesData(WC_TRACE_RESTRICT);
 		InvalidateWindowClassesData(WC_TRACE_RESTRICT_SLOTS);
+		InvalidateWindowClassesData(WC_VEHICLE_ORDERS);
 	}
 
 	return CommandCost();

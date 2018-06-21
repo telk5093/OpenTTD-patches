@@ -44,6 +44,7 @@ struct BaseVehicleListWindow : public Window {
 		ADI_REPLACE,
 		ADI_SERVICE,
 		ADI_DEPOT,
+		ADI_CANCEL_DEPOT,
 		ADI_ADD_SHARED,
 		ADI_REMOVE_ALL,
 		ADI_CHANGE_ORDER,
@@ -72,7 +73,7 @@ struct BaseVehicleListWindow : public Window {
 	void CheckCargoFilterEnableState(int plane_widget, bool re_init, bool possible = true);
 	Dimension GetActionDropdownSize(bool show_autoreplace, bool show_group, bool show_template_replace, StringID change_order_str = 0);
 	DropDownList *BuildActionDropdownList(bool show_autoreplace, bool show_group, bool show_template_replace,
-			StringID change_order_str = 0, bool show_create_group = false);
+			StringID change_order_str = 0, bool show_create_group = false, bool consider_top_level = false);
 	bool ShouldShowActionDropdownList() const;
 };
 

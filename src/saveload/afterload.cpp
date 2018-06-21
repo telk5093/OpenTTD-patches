@@ -763,13 +763,6 @@ bool AfterLoadGame()
 		return false;
 	}
 
-	if (_networking && CountSelectedGRFs(_grfconfig) > NETWORK_MAX_GRF_COUNT) {
-		SetSaveLoadError(STR_NEWGRF_ERROR_TOO_MANY_NEWGRFS_LOADED);
-		/* Restore the signals */
-		ResetSignalHandlers();
-		return false;
-	}
-
 	/* The value of _date_fract got divided, so make sure that old games are converted correctly. */
 	if (IsSavegameVersionBefore(11, 1) || (IsSavegameVersionBefore(147) && _date_fract > DAY_TICKS)) _date_fract /= 885;
 
@@ -1487,7 +1480,9 @@ bool AfterLoadGame()
 	if (IsSavegameVersionBefore(26)) {
 		Station *st;
 		FOR_ALL_STATIONS(st) {
-			st->last_vehicle_type = VEH_INVALID;
+			for (CargoID c = 0; c < NUM_CARGO; c++) {
+				st->goods[c].last_vehicle_type = VEH_INVALID;
+			}
 		}
 	}
 
@@ -2342,22 +2337,21 @@ bool AfterLoadGame()
 		/* Animated tiles would sometimes not be actually animated or
 		 * in case of old savegames duplicate. */
 
-		extern TileIndex *_animated_tile_list;
-		extern uint _animated_tile_count;
+		extern SmallVector<TileIndex, 256> _animated_tiles;
 
-		for (uint i = 0; i < _animated_tile_count; /* Nothing */) {
+		for (TileIndex *tile = _animated_tiles.Begin(); tile < _animated_tiles.End(); /* Nothing */) {
 			/* Remove if tile is not animated */
-			bool remove = _tile_type_procs[GetTileType(_animated_tile_list[i])]->animate_tile_proc == NULL;
+			bool remove = _tile_type_procs[GetTileType(*tile)]->animate_tile_proc == NULL;
 
 			/* and remove if duplicate */
-			for (uint j = 0; !remove && j < i; j++) {
-				remove = _animated_tile_list[i] == _animated_tile_list[j];
+			for (TileIndex *j = _animated_tiles.Begin(); !remove && j < tile; j++) {
+				remove = *tile == *j;
 			}
 
 			if (remove) {
-				DeleteAnimatedTile(_animated_tile_list[i]);
+				DeleteAnimatedTile(*tile);
 			} else {
-				i++;
+				tile++;
 			}
 		}
 	}
@@ -3239,6 +3233,20 @@ bool AfterLoadGame()
 #endif
 	}
 
+	if (IsSavegameVersionBefore(198)) {
+		/* Convert towns growth_rate and grow_counter to ticks */
+		Town *t;
+		FOR_ALL_TOWNS(t) {
+			/* 0x8000 = TOWN_GROWTH_RATE_CUSTOM previously */
+			if (t->growth_rate & 0x8000) SetBit(t->flags, TOWN_CUSTOM_GROWTH);
+			if (t->growth_rate != TOWN_GROWTH_RATE_NONE) {
+				t->growth_rate = TownTicksToGameTicks(t->growth_rate & ~0x8000);
+			}
+			/* Add t->index % TOWN_GROWTH_TICKS to spread growth across ticks. */
+			t->grow_counter = TownTicksToGameTicks(t->grow_counter) + t->index % TOWN_GROWTH_TICKS;
+		}
+	}
+
 	if (SlXvIsFeatureMissing(XSLFI_TIMETABLES_START_TICKS)) {
 		// savegame timetable start is in days, but we want it in ticks, fix it up
 		Vehicle *v;
@@ -3348,6 +3356,17 @@ bool AfterLoadGame()
 			}
 		}
 	}
+	if (SlXvIsFeaturePresent(XSLFI_SIG_TUNNEL_BRIDGE, 1, 4)) {
+		/* load_unload_ticks --> tunnel_bridge_signal_num */
+		Train *t;
+		FOR_ALL_TRAINS(t) {
+			TileIndex tile = t->tile;
+			if (IsTileType(tile, MP_TUNNELBRIDGE) && GetTunnelBridgeTransportType(tile) == TRANSPORT_RAIL && IsTunnelBridgeWithSignalSimulation(tile)) {
+				t->tunnel_bridge_signal_num = t->load_unload_ticks;
+				t->load_unload_ticks = 0;
+			}
+		}
+	}
 
 	if (SlXvIsFeatureMissing(XSLFI_CUSTOM_BRIDGE_HEADS)) {
 		/* ensure that previously unused custom bridge-head bits are cleared */
@@ -3411,6 +3430,41 @@ bool AfterLoadGame()
 		for (TileIndex t = 0; t < map_size; t++) {
 			if (IsLevelCrossingTile(t)) {
 				SetCrossingOccupiedByRoadVehicle(t, EnsureNoRoadVehicleOnGround(t).Failed());
+			}
+		}
+	}
+
+	if (SlXvIsFeatureMissing(XSLFI_TIMETABLE_EXTRA)) {
+		Vehicle *v;
+		FOR_ALL_VEHICLES(v) {
+			v->cur_timetable_order_index = v->GetNumManualOrders() > 0 ? v->cur_real_order_index : INVALID_VEH_ORDER_ID;
+		}
+		OrderBackup *bckup;
+		FOR_ALL_ORDER_BACKUPS(bckup) {
+			bckup->cur_timetable_order_index = INVALID_VEH_ORDER_ID;
+		}
+		Order *order;
+		FOR_ALL_ORDERS(order) {
+			if (order->IsType(OT_CONDITIONAL)) {
+				if (order->GetTravelTime() != 0) {
+					DEBUG(sl, 1, "Fixing: order->GetTravelTime() != 0, %u", order->GetTravelTime());
+					order->SetTravelTime(0);
+				}
+			}
+		}
+		OrderList *order_list;
+		FOR_ALL_ORDER_LISTS(order_list) {
+			order_list->DebugCheckSanity();
+		}
+	}
+
+	if (SlXvIsFeaturePresent(XSLFI_TRAIN_THROUGH_LOAD, 0, 1)) {
+		Vehicle *v;
+		FOR_ALL_VEHICLES(v) {
+			if (v->cargo_payment == nullptr) {
+				for (Vehicle *u = v; u != NULL; u = u->Next()) {
+					if (HasBit(v->vehicle_flags, VF_CARGO_UNLOADING)) ClrBit(v->vehicle_flags, VF_CARGO_UNLOADING);
+				}
 			}
 		}
 	}

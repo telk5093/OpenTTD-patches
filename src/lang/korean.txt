@@ -674,10 +674,7 @@ STR_MUSIC_TOOLTIP_SELECT_CUSTOM_2_USER_DEFINED                  :{BLACK}'사용�
 STR_MUSIC_TOOLTIP_TOGGLE_PROGRAM_SHUFFLE                        :{BLACK}프로그램을 무작위 재생합니다.
 STR_MUSIC_TOOLTIP_SHOW_MUSIC_TRACK_SELECTION                    :{BLACK}배경 음악 트랙을 선택할 수 있는 창을 엽니다.
 
-STR_ERROR_NO_SONGS                                              :{WHITE}선택된 배경 음악 목록에 노래가 없습니다. 배경 음악이 재생 되지 않을 것입니다.
-
 # Playlist window
-STR_PLAYLIST_MUSIC_PROGRAM_SELECTION                            :{WHITE}배경 음악 프로그램 선택
 STR_PLAYLIST_TRACK_NAME                                         :{TINY_FONT}{LTBLUE}{ZEROFILL_NUM} "{STRING}"
 STR_PLAYLIST_TRACK_INDEX                                        :{TINY_FONT}{BLACK}음악 목록
 STR_PLAYLIST_PROGRAM                                            :{TINY_FONT}{BLACK}프로그램 - '{STRING}'
@@ -1314,14 +1311,18 @@ STR_CONFIG_SETTING_SHOW_TRAIN_WEIGHT_RATIOS_IN_DETAILS_HELPTEXT :열차의 무�
 STR_CONFIG_SETTING_SHOW_RESTRICTED_SIG_DEF                      :경로 제한 신호기를 기본 그래픽으로 보이기: {STRING}
 STR_CONFIG_SETTING_SHOW_RESTRICTED_SIG_DEF_HELPTEXT             :경로 제한이 설정된 전자 신호기를 NewGRF의 신호기 그래픽 대신 기본 신호기 그래픽에 파란 표시를 한 그래픽으로 표시합니다. 이 옵션은 경로 제한 신호기의 구별을 쉽게 하기 위해 사용합니다.
 STR_CONFIG_SETTING_SHOW_ADV_TRACE_RESTRICT_FEATURES             :고급 경로 제한 기능 표시: {STRING}
-STR_CONFIG_SETTING_SHOW_ADV_TRACE_RESTRICT_FEATURES_HELPTEXT    :고급 경로 제한 기능을 표시합니다. 이 설정을 끄면, 일부 고급 기능이 UI에 표시되지 않습니다. 다만 모든 플레이어는 숨겨진 고급 경로 제한 기능을 사용할 수는 있습니다.
+STR_CONFIG_SETTING_SHOW_ADV_TRACE_RESTRICT_FEATURES_HELPTEXT    :고급 경로 제한 기능을 표시합니다. 이 설정을 끄면, 일부 고급 기능이 UI에 표시되지 않습니다. 다만, 모든 플레이어가 숨겨진 고급 경로 제한 기능을 사용할 수는 있습니다.
+STR_CONFIG_SETTING_SHOW_PROGSIG_FEATURES                        :신호기 프로그래밍 기능 표시: {STRING}
+STR_CONFIG_SETTING_SHOW_PROGSIG_FEATURES_HELPTEXT               :신호기 프로그래밍 기능을 표시합니다. 이 설정을 끄면, 프로그램 신호기를 짓거나 설정하는 버튼이 표시되지 않습니다. 다만, 모든 플레이어가 프로그램 신호기를 사용할 수는 있습니다.
+STR_CONFIG_SETTING_SHOW_VEH_LIST_CARGO_FILTER                   :차량 목록에 화물 종류 필터 표시: {STRING}
+STR_CONFIG_SETTING_SHOW_VEH_LIST_CARGO_FILTER_HELPTEXT          :차량 목록에 화물 종류 필터를 표시합니다. 이 설정을 켜면, 차량 목록 창에 고급 필터 드롭다운이 표시됩니다.
 
 STR_CONFIG_SETTING_LANDSCAPE                                    :지형: {STRING}
 STR_CONFIG_SETTING_LANDSCAPE_HELPTEXT                           :지형에 따라 화물과 도시 성장 요구 조건이 다른 게임 플레이 시나리오가 만들어집니다. NewGRF과 게임 스크립트를 통해 세밀한 조절이 가능합니다.
 STR_CONFIG_SETTING_LAND_GENERATOR                               :지형 만들기: {STRING}
 STR_CONFIG_SETTING_LAND_GENERATOR_HELPTEXT                      :오리지널 모드는 기본 그래픽 세트에 따라 다른 지형을 생성하며, 단조로운 지형을 구성합니다. 천지창조는 개선된 제어 설정을 가진 생성기로 만들어진 임의 지형(펄린 노이즈)을 구성합니다.
-STR_CONFIG_SETTING_MAX_SIGNAL_EVALUATIONS                       :프로그래밍 신호등이 한 번에 신호를 바꿀 수 있게 허용된 최대 횟수: {STRING}
-STR_CONFIG_SETTING_MAX_SIGNAL_EVALUATIONS_HELPTEXT              :프로그래밍 신호등의 한 번에 신호를 바꿀 수 있게 허용된 최대 횟수를 조정합니다.
+STR_CONFIG_SETTING_MAX_SIGNAL_EVALUATIONS                       :프로그램 신호기가 한 번에 신호를 바꿀 수 있게 허용된 최대 횟수: {STRING}
+STR_CONFIG_SETTING_MAX_SIGNAL_EVALUATIONS_HELPTEXT              :프로그램 신호기의 한 번에 신호를 바꿀 수 있게 허용된 최대 횟수를 조정합니다.
 STR_CONFIG_SETTING_LAND_GENERATOR_ORIGINAL                      :오리지널
 STR_CONFIG_SETTING_LAND_GENERATOR_TERRA_GENESIS                 :천지창조
 STR_CONFIG_SETTING_TERRAIN_TYPE                                 :지형 종류: {STRING}
@@ -1367,8 +1368,6 @@ STR_CONFIG_SETTING_SMALLMAP_LAND_COLOUR_HELPTEXT                :소형지도 �
 STR_CONFIG_SETTING_SMALLMAP_LAND_COLOUR_GREEN                   :녹색
 STR_CONFIG_SETTING_SMALLMAP_LAND_COLOUR_DARK_GREEN              :어두운 녹색
 STR_CONFIG_SETTING_SMALLMAP_LAND_COLOUR_VIOLET                  :보라색
-STR_CONFIG_SETTING_REVERSE_SCROLLING                            :스크롤 방향 뒤집기: {STRING}
-STR_CONFIG_SETTING_REVERSE_SCROLLING_HELPTEXT                   :마우스 오른쪽 클릭으로 지도를 스크롤하는 방법을 선택합니다. 이 설정을을 끄면, 마우스 방향과 화면의 스크롤 방향이 같아집니다. 설정을 켜면, 마우스 방향과 화면의 스크롤 방향이 반대가 됩니다.
 STR_CONFIG_SETTING_SMOOTH_SCROLLING                             :게임 화면을 이동시킬 때 부드럽게 이동: {STRING}
 STR_CONFIG_SETTING_SMOOTH_SCROLLING_HELPTEXT                    :소형 지도를 클릭하여 특정 지역으로 스크롤되거나 지도 상의 특정 장소로 이동하는 경우에 주 화면이 어떻게 스크롤 되는지를 설정합니다. 이 설정을 켜면, 화면이 목표 지점까지 부드럽게 이동하고, 설정을 끄면 목표 지점으로 곧바로 넘어가게 됩니다.
 STR_CONFIG_SETTING_MEASURE_TOOLTIP                              :건설도구 사용시 거리 도움말 표시: {STRING}
@@ -1430,8 +1429,6 @@ STR_CONFIG_SETTING_RIGHT_MOUSE_BTN_EMU_COMMAND                  :커맨드 + 클
 STR_CONFIG_SETTING_RIGHT_MOUSE_BTN_EMU_CONTROL                  :CTRL + 클릭
 STR_CONFIG_SETTING_RIGHT_MOUSE_BTN_EMU_OFF                      :끄기
 
-STR_CONFIG_SETTING_LEFT_MOUSE_BTN_SCROLLING                     :마우스 왼쪽 버튼으로 스크롤: {STRING}
-STR_CONFIG_SETTING_LEFT_MOUSE_BTN_SCROLLING_HELPTEXT            :왼쪽 마우스 버튼을 드래그하여 지도를 스크롤 할 수 있도록 합니다. 터치 스크린 환경에서 이 설정을 켜면 매우 유용합니다.
 STR_CONFIG_SETTING_RIGHT_MOUSE_WND_CLOSE                        :오른쪽 클릭으로 창 닫기: {STRING}
 STR_CONFIG_SETTING_RIGHT_MOUSE_WND_CLOSE_HELPTEXT               :창 내부를 오른쪽 클릭하여 창을 닫습니다. 오른쪽 클릭으로 도움말 표시 설정을 해제해야 합니다!
 
@@ -1726,6 +1723,8 @@ STR_CONFIG_SETTING_ZOOM_LVL_OUT_64X                             :64x
 STR_CONFIG_SETTING_ZOOM_LVL_OUT_128X                            :128x
 STR_CONFIG_SETTING_TOWN_GROWTH                                  :도시 성장 속도: {STRING}
 STR_CONFIG_SETTING_TOWN_GROWTH_HELPTEXT                         :도시의 성장 속도를 설정합니다.
+STR_CONFIG_SETTING_TOWN_GROWTH_CARGO_TRANSPORTED                :도시의 화물 수송량이 도시 성장 속도에 미치는 영향: {STRING}
+STR_CONFIG_SETTING_TOWN_GROWTH_CARGO_TRANSPORTED_HELPTEXT       :지난 달의 도시 화물 수송량이 도시 성장 속도에 미치는 영향에 대한 백분율입니다.
 STR_CONFIG_SETTING_TOWN_GROWTH_EXTREME_SLOW                     :매우 느림
 STR_CONFIG_SETTING_TOWN_GROWTH_VERY_SLOW                        :더 느림
 STR_CONFIG_SETTING_TOWN_GROWTH_NONE                             :없음
@@ -1817,6 +1816,8 @@ STR_CONFIG_SETTING_INTERFACE_VIEWPORTS                          :{ORANGE}게임 
 STR_CONFIG_SETTING_INTERFACE_CONSTRUCTION                       :{ORANGE}건설
 STR_CONFIG_SETTING_INTERFACE_DEPARTUREBOARDS                    :{ORANGE}출발/도착 안내
 STR_CONFIG_SETTING_INTERFACE_WALLCLOCK                          :{ORANGE}시계
+STR_CONFIG_SETTING_INTERFACE_TIMETABLE                          :{ORANGE}시간표
+STR_CONFIG_SETTING_INTERFACE_ADV_SIGNALS                        :{ORANGE}신호기 (고급)
 STR_CONFIG_SETTING_ADVISORS                                     :{ORANGE}뉴스 / 정보
 STR_CONFIG_SETTING_COMPANY                                      :{ORANGE}회사
 STR_CONFIG_SETTING_ACCOUNTING                                   :{ORANGE}회계
@@ -2785,7 +2786,7 @@ STR_BRIDGE_NAME_GIRDER_STEEL                                    :강철 거더�
 STR_BRIDGE_NAME_CANTILEVER_STEEL                                :강철 캔틸레버교
 STR_BRIDGE_NAME_SUSPENSION_CONCRETE                             :콘크리트 현수교
 STR_BRIDGE_NAME_WOODEN                                          :나무 다리
-STR_BRIDGE_NAME_CONCRETE                                        :콘트리트교
+STR_BRIDGE_NAME_CONCRETE                                        :콘크리트교
 STR_BRIDGE_NAME_TUBULAR_STEEL                                   :강철 원통형 다리
 STR_BRIDGE_TUBULAR_SILICON                                      :실리콘 원통형 다리
 
@@ -3139,7 +3140,7 @@ STR_LAI_OBJECT_DESCRIPTION_COMPANY_OWNED_LAND                   :회사 소유�
 STR_ABOUT_OPENTTD                                               :{WHITE}OpenTTD에 대해서
 STR_ABOUT_ORIGINAL_COPYRIGHT                                    :{BLACK}Original copyright {COPYRIGHT} 1995 Chris Sawyer, All rights reserved
 STR_ABOUT_VERSION                                               :{BLACK}OpenTTD 버전 {REV}
-STR_ABOUT_COPYRIGHT_OPENTTD                                     :{BLACK}OpenTTD {COPYRIGHT} 2002-2017 OpenTTD 개발팀
+STR_ABOUT_COPYRIGHT_OPENTTD                                     :{BLACK}OpenTTD {COPYRIGHT} 2002-2018 OpenTTD 개발팀
 
 # Save/load game/scenario
 STR_SAVELOAD_SAVE_CAPTION                                       :{WHITE}게임 저장
@@ -3436,8 +3437,6 @@ STR_TOWN_POPULATION                                             :{BLACK}총 인�
 STR_TOWN_VIEW_TOWN_CAPTION                                      :{WHITE}{TOWN}
 STR_TOWN_VIEW_CITY_CAPTION                                      :{WHITE}{TOWN} (대도시)
 STR_TOWN_VIEW_POPULATION_HOUSES                                 :{BLACK}인구: {ORANGE}{COMMA}{BLACK}  가구수: {ORANGE}{COMMA}
-STR_TOWN_VIEW_PASSENGERS_LAST_MONTH_MAX                         :{BLACK}지난 달 승객 수: {ORANGE}{COMMA}{BLACK}  최대: {ORANGE}{COMMA}
-STR_TOWN_VIEW_MAIL_LAST_MONTH_MAX                               :{BLACK}지난달 우편수: {ORANGE}{COMMA}{BLACK}  최고: {ORANGE}{COMMA}
 STR_TOWN_VIEW_CARGO_FOR_TOWNGROWTH                              :{BLACK}도시가 성장하기 위해 필요한 화물:
 STR_TOWN_VIEW_CARGO_FOR_TOWNGROWTH_REQUIRED_GENERAL             :{ORANGE}{STRING}{RED}{G 0 "이" "가"} 필요함
 STR_TOWN_VIEW_CARGO_FOR_TOWNGROWTH_REQUIRED_WINTER              :겨울에는 {ORANGE}{STRING}{BLACK}{G 0 "이" "가"} 필요함
@@ -3628,9 +3627,13 @@ STR_STATION_VIEW_CLOSE_AIRPORT_TOOLTIP                          :{BLACK}이 공�
 # Departures window
 STR_DEPARTURES_CAPTION                                          :{WHITE}{STATION} - 실시간 위치 정보
 STR_DEPARTURES_CAPTION_WAYPOINT                                 :{WHITE}{WAYPOINT} - 실시간 위치 정보
+STR_DEPARTURES_PAX                                              :{BLACK}{TINY_FONT}여
+STR_DEPARTURES_FREIGHT                                          :{BLACK}{TINY_FONT}화
 STR_DEPARTURES_DEPARTURES                                       :{BLACK}{TINY_FONT}발
 STR_DEPARTURES_ARRIVALS                                         :{BLACK}{TINY_FONT}착
 STR_DEPARTURES_VIA_BUTTON                                       :{BLACK}{TINY_FONT}경유
+STR_DEPARTURES_PAX_TOOLTIP                                      :{BLACK}여객 열차 보이기
+STR_DEPARTURES_FREIGHT_TOOLTIP                                  :{BLACK}화물 열차 보이기
 STR_DEPARTURES_DEPARTURES_TOOLTIP                               :{BLACK}도착 시간 보이기
 STR_DEPARTURES_ARRIVALS_TOOLTIP                                 :{BLACK}출발 시간 보이기
 STR_DEPARTURES_VIA_TOOLTIP                                      :{BLACK}통과 열차 보이기
@@ -3856,11 +3859,9 @@ STR_INDUSTRY_VIEW_REQUIRES_CARGO_CARGO                          :{BLACK}필요�
 STR_INDUSTRY_VIEW_REQUIRES_CARGO_CARGO_CARGO                    :{BLACK}필요함: {YELLOW}{STRING}{STRING}, {STRING}{STRING}, {STRING}{STRING}
 ############ range for requires ends
 
-STR_INDUSTRY_VIEW_REQUIRES                                      :{BLACK}받는 화물
-STR_INDUSTRY_VIEW_ACCEPT_CARGO                                  :{YELLOW}{STRING}
-STR_INDUSTRY_VIEW_ACCEPT_CARGO_AMOUNT                           :{YELLOW}{CARGO_LONG} {BLACK}대기중
-STR_INDUSTRY_VIEW_ACCEPT_CARGO_TEXT                             :{YELLOW}{STRING}{STRING}
-STR_INDUSTRY_VIEW_ACCEPT_CARGO_AMOUNT_TEXT                      :{YELLOW}{CARGO_LONG}{STRING}
+STR_INDUSTRY_VIEW_REQUIRES                                      :{BLACK}받는 화물:
+STR_INDUSTRY_VIEW_ACCEPT_CARGO                                  :{YELLOW}{STRING}{BLACK}{3:STRING}
+STR_INDUSTRY_VIEW_ACCEPT_CARGO_AMOUNT                           :{YELLOW}{STRING}{BLACK}: {CARGO_SHORT} 대기중{STRING}
 
 ############ range for produces starts
 STR_INDUSTRY_VIEW_PRODUCES_CARGO                                :{BLACK}생산: {YELLOW}{STRING}{STRING}
@@ -3981,6 +3982,8 @@ STR_PURCHASE_INFO_ALL_BUT                                       :{CARGO_LIST} �
 STR_PURCHASE_INFO_MAX_TE                                        :{BLACK}최고 견인력: {GOLD}{FORCE}
 STR_PURCHASE_INFO_AIRCRAFT_RANGE                                :{BLACK}항속거리: {GOLD}{COMMA} 칸
 STR_PURCHASE_INFO_AIRCRAFT_TYPE                                 :{BLACK}항공기 종류: {GOLD}{STRING}
+
+STR_CARGO_TYPE_FREIGHT                                          :화물
 
 STR_BUY_VEHICLE_TRAIN_LIST_TOOLTIP                              :{BLACK}열차 차량 구매 목록입니다. 차량의 정보를 보려면 클릭하세요. CTRL + 클릭하면 해당 차량을 숨김/표시 처리할 수 있습니다.
 STR_BUY_VEHICLE_ROAD_VEHICLE_LIST_TOOLTIP                       :{BLACK}자동차/전차 구매 목록입니다. 차량의 정보를 보려면 클릭하세요. CTRL + 클릭하면 해당 차량을 숨김/표시 처리할 수 있습니다.
@@ -4255,7 +4258,7 @@ STR_VEHICLE_DETAILS_AIRCRAFT_RENAME                             :{BLACK}항공�
 STR_VEHICLE_INFO_AGE_RUNNING_COST_YR                            :{BLACK}연령: {LTBLUE}{STRING}{BLACK}   유지비: {LTBLUE}{CURRENCY_LONG}/년
 
 STR_RUNNING                                                     :{LTBLUE}운행 중
-STR_NEED_REPAIR                                                 :{ORANGE}열차를 수리해야 합니다. 최고 속도가 {VELOCITY}로 감소하였습니다.
+STR_NEED_REPAIR                                                 :{ORANGE}차량을 수리해야 합니다. 최고 속도가 {VELOCITY}로 감소하였습니다.
 STR_CURRENT_STATUS                                              :{BLACK}현재 상태: {STRING}
 
 # The next two need to stay in this order
@@ -4629,6 +4632,15 @@ STR_TIMETABLE_EXPECTED_TOOLTIP                                  :{BLACK}시간�
 STR_TIMETABLE_ARRIVAL_ABBREVIATION                              :도착:
 STR_TIMETABLE_DEPARTURE_ABBREVIATION                            :출발:
 
+STR_TIMETABLE_AUTOSEP_TIMETABLE_INCOMPLETE                      :{BLACK}시간표가 완성되지 않아 자동 배차 조절이 적용되고 있지 않습니다.
+STR_TIMETABLE_AUTOSEP_OK                                        :{BLACK}자동 배차 조절이 적용되고 있습니다.
+STR_TIMETABLE_AUTOSEP_SINGLE_VEH                                :{BLACK}이 시간표를 적용받는 차량이 1 대밖에 존재하지 않아 자동 배차 조절이 적용되고 있지 않습니다.
+STR_TIMETABLE_WARNING_AUTOSEP_CONDITIONAL                       :{BLACK}자동 배차 조절 실패... 조건부 경로가 존재합니다.
+STR_TIMETABLE_WARNING_AUTOSEP_MISSING_TIMINGS                   :{BLACK}자동 배차 조절 실패... 시간 값이 모두 지정되어 있지 않습니다.
+STR_TIMETABLE_WARNING_FULL_LOAD                                 :{BLACK}'가득 싣기'가 설정되어 있는 경로에 시간표를 지정하는 것은 권장하지 않습니다.
+STR_TIMETABLE_WARNING_AUTOFILL_CONDITIONAL                      :{BLACK}자동 시간 설정은 조건부 경로 중 한 경로만 채울 것입니다.
+STR_TIMETABLE_NON_TIMETABLED_BRANCH                             :{BLACK}하나 이상의 조건부 경로 운행 시간이 채워지지 않았습니다.
+
 
 # Date window (for timetable)
 STR_DATE_CAPTION                                                :{WHITE}날짜 설정
@@ -4945,9 +4957,10 @@ STR_ERROR_TOO_MANY_BUS_STOPS                                    :{WHITE}버스 �
 STR_ERROR_TOO_MANY_TRUCK_STOPS                                  :{WHITE}트럭 적하장이 너무 많습니다
 STR_ERROR_TOO_CLOSE_TO_ANOTHER_STATION                          :{WHITE}다른 역과 너무 가깝습니다!
 STR_ERROR_TOO_CLOSE_TO_ANOTHER_DOCK                             :{WHITE}다른 항구와 너무 가깝습니다!
+STR_ERROR_TOO_MANY_DOCKS                                        :{WHITE}항구가 너무 많습니다!
 STR_ERROR_TOO_CLOSE_TO_ANOTHER_AIRPORT                          :{WHITE}다른 공항과 너무 가깝습니다!
 STR_ERROR_CAN_T_RENAME_STATION                                  :{WHITE}역 이름을 바꿀 수 없습니다...
-STR_ERROR_DRIVE_THROUGH_ON_TOWN_ROAD                            :{WHITE}... 여기는 도시 소유의 도로 입니다
+STR_ERROR_DRIVE_THROUGH_ON_TOWN_ROAD                            :{WHITE}... 여기는 도시 소유의 도로입니다
 STR_ERROR_DRIVE_THROUGH_DIRECTION                               :{WHITE}... 도로의 방향과 일치하지 않습니다.
 STR_ERROR_DRIVE_THROUGH_CORNER                                  :{WHITE}... 도로 통과 정류장은 곡선도로에 건설할 수 없습니다.
 STR_ERROR_DRIVE_THROUGH_JUNCTION                                :{WHITE}... 도로 통과 정류장은 교차로에 건설할 수 없습니다.
