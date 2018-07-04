@@ -622,6 +622,17 @@ struct BuildRoadToolbarWindow : Window {
 			this->last_started_action_oneway = _one_way_button_clicked;
 			switch (select_proc) {
 				default: NOT_REACHED();
+
+				case DDSP_SINGLE_TILE:
+					switch (this->last_started_action) {
+						case WID_ROT_DEPOT:
+							DoCommandP(end_tile, _cur_roadtype << 2 | _road_depot_orientation, 0,
+										CMD_BUILD_ROAD_DEPOT | CMD_MSG(_road_type_infos[_cur_roadtype].err_depot), CcRoadDepot);
+							break;
+						default: NOT_REACHED();
+					}
+					break;
+
 				case DDSP_BUILD_BRIDGE:
 					switch (last_started_action) {
 						case WID_ROT_BUILD_TUNNEL:
