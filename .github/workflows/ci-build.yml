@@ -5,6 +5,7 @@ on:
   push:
     branches:
     - master
+    - jgrpp
 
 env:
   CTEST_OUTPUT_ON_FAILURE: 1
